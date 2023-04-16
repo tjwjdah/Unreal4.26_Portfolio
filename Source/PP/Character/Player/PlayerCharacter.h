@@ -186,6 +186,7 @@ public:
 	void SprintKeyRelease();
 	void WeaponOnOffKey();
 	void Inventory();
+	void Quest();
 
 	void OneKey();
 	void TwoKey();

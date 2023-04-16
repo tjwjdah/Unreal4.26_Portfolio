@@ -16,7 +16,11 @@ void UMainHUD::NativeConstruct()
 	m_CharacterState = Cast<UCharacterState>(GetWidgetFromName(TEXT("UI_CharacterState")));
 	m_DurabilityBar = Cast<UDurabilityBar>(GetWidgetFromName(TEXT("UI_DurabilityBar")));
 	m_Crafting = Cast<UCrafting>(GetWidgetFromName(TEXT("UI_Crafting")));
+	
+	m_QuestWidget = Cast<UQuestWidget>(GetWidgetFromName(TEXT("UI_Quest")));
 	m_SelectedBlueprintInfo = Cast<USelectedBlueprintInfo>(GetWidgetFromName(TEXT("UI_SelectedBlueprintInfo")));
+	int32 a = 0;
+
 }
 void UMainHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {

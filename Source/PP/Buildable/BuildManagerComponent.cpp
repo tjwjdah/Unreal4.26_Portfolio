@@ -134,6 +134,9 @@ FVector UBuildManagerComponent::GetMousePickingLocation()
 	DirectionVector += GetOwner()->GetActorLocation();
 	return FVector(FMath::GridSnap(DirectionVector.X, GridSize), FMath::GridSnap(DirectionVector.Y, GridSize),FloorHeight);
 	*/
+
+	PrintViewport(1.f, FColor::Red, FString::Printf(TEXT("%f %f %f"), result.ImpactNormal.Z, result.ImpactNormal.Y, result.ImpactNormal.Z));
+
 	return result.ImpactPoint;
 }
 FVector UBuildManagerComponent::GetGridLocation(FVector MouseLocation)

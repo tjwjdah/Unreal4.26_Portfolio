@@ -7,7 +7,9 @@
 #include "MonsterAIController.h"
 #include "MonsterSpawnPoint.h"
 #include "PatrolPointSpline.h"
+#include "../../PPGameModeBase.h"
 #include "../Player/PlayerCharacter.h"
+#include "../../Widget/QuestWidget.h"
 
 // Sets default values
 AMonster::AMonster()
@@ -53,7 +55,7 @@ AMonster::AMonster()
 	m_ItemBoxProduceOn = false;
 	m_DeathOn = false;
 	m_SummonStart = false;
-
+	m_QuestCheck = false;
 }
 
 // Called when the game starts or when spawned
@@ -303,7 +305,15 @@ float AMonster::TakeDamage(float DamageAmount,
 				
 			}
 		}
-
+		APPGameModeBase* GameMode = Cast<APPGameModeBase>(GetWorld()->GetAuthGameMode());
+		if (GameMode && !m_QuestCheck) {
+			m_QuestCheck = true;
+			UQuestWidget* QuestWidget = GameMode->GetMainHUD()->GetQuestWidget();
+			if (QuestWidget) {
+				//PrintViewport(1.f, FColor::Red, FString::Printf(TEXT("????")));
+				QuestWidget->QuestCheck(EQuestType::Hunt, m_MonsterInfo.Name);
+			}
+		}
 		Death();
 		
 	}

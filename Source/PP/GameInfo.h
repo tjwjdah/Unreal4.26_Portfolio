@@ -17,6 +17,7 @@
 #include "Animation/BlendSpace.h"
 #include "Blueprint/IUserObjectListEntry.h"
 #include "Blueprint/WidgetTree.h"
+#include "Blueprint/IUserObjectListEntry.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameInfo.generated.h"
 /**
@@ -214,8 +215,76 @@ struct FUIItemTableInfo :
 
 };
 
+UENUM(BlueprintType)
+enum class EQuestType : uint8
+{
+	Collection,
+	Hunt,
+	Craft,
+	Max
+};
+USTRUCT(BlueprintType)
+struct FQuestInfo
+{
+	GENERATED_BODY()
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		EQuestType	Type;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		FString	DestName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		int32	Count;
+};
+USTRUCT(BlueprintType)
+struct FQuestCompensation
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	FString	ItemName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	int32	CompensationMount;
+};
+
+USTRUCT(BlueprintType)
+struct FQuestTableInfo :
+	public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	FString	Name;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		FString	QuestDesc;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		TArray<FQuestInfo>	InfoArray;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		TArray<FQuestCompensation>	CompensationArray;
+};
+
+struct FQuestDataInfo {
+	EQuestType	Type;
+	FString	DestName;
+	int32	Count;
+	int32	MaxCount;
+	bool Complete;
+};
 
 
+struct FQuestData
+{
+	FString	Name;
+	FString	QuestDesc;
+	TArray<FQuestDataInfo>	CompleteArray;
+	TArray<FQuestCompensation>	CompensationArray;
+	bool	Complete;
+	int32 Index;
+};
 
 USTRUCT(BlueprintType)
 struct FVoiceEffects

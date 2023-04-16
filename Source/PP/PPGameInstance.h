@@ -133,7 +133,8 @@ private:
 	UPROPERTY()
 		UDataTable* m_UIItemInfoTable;
 
-
+	UPROPERTY()
+		UDataTable* m_UIQuestInfoTable;
 
 	/*
 	UPROPERTY()
@@ -143,21 +144,24 @@ private:
 		UDataTable* m_QuestInfoTable;
 
 	EPlayerJob	m_SelectJob;
-	
-	TMap<FString, FQuestData>	m_QuestComplete;
 	*/
+	TMap<FString, FQuestData>	m_QuestComplete;
+	
 public:
-	/*
+	
 	const TMap<FString, FQuestData>& GetQuestData()
 	{
 		return m_QuestComplete;
 	}
-
+	TMap<FString, FQuestData>& GetWQuestData()
+	{
+		return m_QuestComplete;
+	}
 	const FQuestData* FindQuestData(const FString& Name)
 	{
 		return m_QuestComplete.Find(Name);
 	}
-
+	/*
 	void SetSelectJob(EPlayerJob Job)
 	{
 		m_SelectJob = Job;
@@ -175,6 +179,8 @@ public:
 	const FMonsterTableInfo* FindMonsterInfo(const FString& Name);
 	const FPlayerTableInfo* FindPlayerInfo(const FString& Name);
 	const FUIItemTableInfo* FindUIItemInfo(const FString& Name);
+	const FQuestTableInfo* FindUIQuestInfo(const FString& Name);
 	const UDataTable* GetUIItemInfo() { return m_UIItemInfoTable; }
+	
 	//const FQuestTableInfo* FindQuestInfo(const FString& Name);
 };

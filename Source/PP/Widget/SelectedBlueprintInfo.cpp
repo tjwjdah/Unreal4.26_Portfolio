@@ -7,6 +7,7 @@
 #include "../PPGameInstance.h"
 #include "../PPGameModeBase.h"
 #include "Engine/BlueprintGeneratedClass.h"
+#include "../Widget/QuestWidget.h"
 void USelectedBlueprintInfo::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -193,5 +194,9 @@ void USelectedBlueprintInfo::Craft()
 	const FUIItemTableInfo* Info = GameInst->FindUIItemInfo(Item2->GetItemName());
 
 	GameMode->GetMainHUD()->GetInventory()->AddItem(Info, m_MakeAmount);
-
+		UQuestWidget* QuestWidget = GameMode->GetMainHUD()->GetQuestWidget();
+		if (QuestWidget) {
+			//PrintViewport(1.f, FColor::Red, FString::Printf(TEXT("????")));
+			QuestWidget->QuestCheck(EQuestType::Craft, Info->Name);
+		}
 }

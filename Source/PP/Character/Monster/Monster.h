@@ -156,7 +156,7 @@ protected:
 
 
 	bool				m_DeathOn;
-
+	bool                m_QuestCheck;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

@@ -1,34 +1,41 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "../GameInfo.h"
-#include "Blueprint/UserWidget.h"
-#include "Components/Image.h"
 #include "Components/TextBlock.h"
-#include "Components/EditableTextBox.h"
-#include "RootItemList.generated.h"
+#include "Blueprint/UserWidget.h"
+#include "QuestDescCompleteListWidget.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PP_API URootItemList : public UUserWidget
+class PP_API UQuestDescCompleteListWidget : public UUserWidget , public IUserObjectListEntry
 {
 	GENERATED_BODY()
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		UImage* m_IconImage;
+		UTextBlock* m_TypeText;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		UTextBlock* m_Amount;
+		UTextBlock* m_DestText;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		UEditableTextBox* m_Name;
+		UTextBlock* m_CountText;
+
+	int32 m_Index;
 protected:
 	virtual void NativeConstruct();
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime);
+
 
 public:
 	UFUNCTION(BlueprintCallable)
 		void SetData(UObject* Data);
 
+	int32 GetIndex() {
+		return m_Index;
+	}
+public:
+	virtual void NativeOnListItemObjectSet(UObject* ListItemObject);
+	virtual void NativeOnItemSelectionChanged(bool bIsSelected);
 };

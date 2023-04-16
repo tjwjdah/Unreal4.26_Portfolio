@@ -437,7 +437,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAxis(TEXT("LookUp"), this,
 		&APlayerCharacter::LookUpKey);
 	
-
+	
+	
 	PlayerInputComponent->BindAction(TEXT("BuildRot"), EInputEvent::IE_Pressed, this,
 		&APlayerCharacter::BuildRot);
 
@@ -465,6 +466,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction(TEXT("Inventory"), EInputEvent::IE_Pressed, this,
 		&APlayerCharacter::Inventory);
 	
+	PlayerInputComponent->BindAction(TEXT("Quest"), EInputEvent::IE_Pressed, this,
+		&APlayerCharacter::Quest);
 	PlayerInputComponent->BindAction(TEXT("One"), EInputEvent::IE_Pressed, this,
 		&APlayerCharacter::OneKey);
 	PlayerInputComponent->BindAction(TEXT("Two"), EInputEvent::IE_Pressed, this,
@@ -882,6 +885,20 @@ void APlayerCharacter::Inventory()
 		m_MainHUD->GetInventory()->SetVisibility(ESlateVisibility::Collapsed);
 		m_MainHUD->GetCrafting()->SetVisibility(ESlateVisibility::Collapsed);
 		m_MainHUD->GetSelectedBlueprintInfo()->SetVisibility(ESlateVisibility::Collapsed);
+		m_MainHUD->UI_OnOff(false);
+	}
+}
+
+void APlayerCharacter::Quest()
+{
+	if (m_MainHUD->GetQuestWidget()->GetVisibility() == ESlateVisibility::Collapsed)
+	{
+		m_MainHUD->GetQuestWidget()->SetVisibility(ESlateVisibility::Visible);
+		m_MainHUD->UI_OnOff(true);
+	}
+	else
+	{
+		m_MainHUD->GetQuestWidget()->SetVisibility(ESlateVisibility::Collapsed);
 		m_MainHUD->UI_OnOff(false);
 	}
 }

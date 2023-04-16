@@ -12,6 +12,7 @@
 #include "UseInventoryTile.h"
 #include "ItemLoot.h"
 #include "Crafting.h"
+#include "QuestWidget.h"
 #include "DurabilityBar.h"
 #include "SelectedBlueprintInfo.h"
 #include "UseGarmentInventoryTile.h"
@@ -46,6 +47,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		UCrafting* m_Crafting;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		UQuestWidget* m_QuestWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		USelectedBlueprintInfo* m_SelectedBlueprintInfo;
 protected:
 	virtual void NativeConstruct();
@@ -62,5 +65,7 @@ public:
 	UDurabilityBar* GetDurabilityBar() { return m_DurabilityBar; }
 	UCrafting* GetCrafting() { return m_Crafting; }
 	USelectedBlueprintInfo* GetSelectedBlueprintInfo() { return m_SelectedBlueprintInfo; }
+	UQuestWidget* GetQuestWidget() { 
+		return m_QuestWidget; }
 	void UI_OnOff(bool _On);
 };

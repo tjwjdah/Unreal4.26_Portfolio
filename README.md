@@ -353,7 +353,7 @@ FinalWantedChunks 기준으로 Load / Unload 수행
 
 이 방식은 연결된 건축물이 여러 청크에 걸쳐 있더라도 연결 그래프를 따라 필요한 청크를 함께 로드할 수 있다는 장점이 있습니다. 대신 하나의 대형 구조물이 많은 청크를 가로지르면 활성 청크 수가 증가할 수 있으므로, 연결 안정성과 메모리 사용량 사이의 트레이드오프가 있습니다.
 
-#### 정량 측정 항목
+#### 측정 결과
 
 | 방식 | TotalKnownChunks | ActiveChunks | UnloadedChunks | ActiveTotalInstances | ActiveHISMComponents | AvgLoad(ms) | AvgUnload(ms) | AvgSave(ms) | 비고 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
@@ -471,7 +471,7 @@ struct FResourceSaveData
 그래서 언로드 전 Dirty Chunk를 캐시에 반영하고, 수동 저장 시에도 Dirty Chunk만 SaveGame 데이터에 갱신하도록 분리했습니다.  
 또한 연결 구조가 바뀐 경우에는 연결 정보가 포함된 청크도 함께 Dirty 처리했습니다.
 
-#### 정량 측정 항목
+#### 측정 결과
 
 | 방식 | 전체 청크 수 | Dirty 청크 수 | 저장 대상 청크 수 | Save Time(ms) | Save Slot Size(KB/MB) | 비고 |
 |---|---:|---:|---:|---:|---:|---|
@@ -716,7 +716,7 @@ struct FBuildDefinitionInfo : public FTableRowBase
 - 배치 가능 여부에 따라 성공/실패 머티리얼을 적용합니다.
 - 배치 확정 시 정적 건축물은 Actor를 유지하지 않고 Chunk HISM 인스턴스로 전환합니다.
 
-#### 정량 측정 항목
+#### 측정 결과
 
 | 항목 | 측정/기록 값 | 설명 |
 |---|---:|---|
@@ -758,7 +758,7 @@ PP/Buildable/Buildable.cpp
 - 제작 UI는 무기, 장비, 건축 아이템, 음식 카테고리로 필터링합니다.
 - 퀘스트 UI는 사냥/제작 진행도를 갱신하고, 완료 시 보상을 인벤토리에 지급합니다.
 
-#### 정량 측정 항목
+#### 측정 결과
 
 | 항목 | 값 | 설명 |
 |---|---:|---|
@@ -797,8 +797,8 @@ PP/PPGameInstance.cpp
 - Player Detect Service에서 거리와 각도를 기준으로 타겟을 감지합니다.
 - Decorator로 거리 조건과 보스 Phase 조건을 판단합니다.
 - 보스 Morigesh는 Phase에 따라 보호막, 좀비 소환, 폭발, 메테오, 단검 공격 패턴을 사용합니다.
-
-#### 정량 측정 항목
+/*
+#### 측정 결과
 
 AI는 수치보다 영상/GIF가 더 잘 보입니다. 그래도 수치를 넣는다면 아래 정도가 적당합니다.
 
@@ -808,6 +808,7 @@ AI는 수치보다 영상/GIF가 더 잘 보입니다. 그래도 수치를 넣�
 | Service / Decorator 수 | [ ] | 감지, 거리 체크, Phase 체크 등 |
 | 보스 Phase 수 | [ ] | Morigesh Phase 패턴 수 |
 | 보스 스킬 수 | [ ] | 보호막, 소환, 폭발, 메테오 등 |
+*/ 측정 안할꺼
 
 #### 이미지/GIF 추천 위치
 

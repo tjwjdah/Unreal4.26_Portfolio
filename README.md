@@ -223,32 +223,22 @@ BuildingMap / ResourceMap 접근
 Damage / Upgrade / Destroy / Harvest / Save 처리
 ```
 
-#### 벤치마크 조건
-
-| 항목 | 값 |
-|---|---|
-| 배치 수 | `GridSizeX 30 * GridSizeY 30 * GridSizeZ 5 = 4,500개` |
-| Mesh | `[측정에 사용한 Mesh 이름]` |
-| 간격 | `Spacing 300.f` |
-| 측정 방식 | 동일 위치에서 3~5회 평균 |
-| 측정 환경 | `[CPU / GPU / RAM / 해상도 / 빌드 타입]` |
-
 #### 측정 결과
 
-| 방식 | 생성 시간(ms) | 평균 FPS | Game Thread(ms) | Render Thread(ms) | GPU(ms) | Draw Calls | Actor 수 | Component 수 | 비고 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| Actor | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | 4,500 | [ ] | 개별 Actor Spawn |
-| ISM | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | 1 | [ ] | 단일 ISM Component |
-| HISM | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | 1 | [ ] | 단일 HISM Component |
-| Chunk-HISM | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | `[청크 수]` | `[HISM 수]` | 청크 + ID/Socket 관리 포함 |
+| 방식 | 생성 시간(ms) | 평균 FPS | Game(ms) | Draw/Render(ms) | GPU(ms) | Draw Calls | 비고 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Actor | 2,155.835 | 68.0 | 14.7 | 0.25 | 14.7 | 4,676 | 개별 Actor 4,500개 |
+| ISM | 15.291 | 81.5 | 8.8 | 0.25 | 12.8 | 1,096 | 단일 ISM Component |
+| HISM | 15.631 | 129.0 | 7.0 | 0.25 | 8.2 | 1,254 | 단일 HISM Component |
+| Chunk-HISM | 28.795 | 131.0 | 7.1 | 0.25 | 8.2 | 1,614 | 청크 단위 HISM 관리 |
 
-#### 측정 후 넣을 해석 예시
+같은 조건에서 4,500개 오브젝트를 배치해 Actor / ISM / HISM / Chunk-HISM을 비교했습니다.
 
-```text
-동일한 4,500개 오브젝트 배치 조건에서 Actor, ISM, HISM, Chunk-HISM 방식을 비교했습니다.
-Actor 방식은 개별 오브젝트 관리에는 편하지만, 오브젝트 수가 늘어날수록 Actor 수와 Component 수가 그대로 증가합니다.
-반면 HISM/Chunk-HISM 방식은 반복 Mesh를 인스턴스 단위로 관리해 더 적은 Component로 대량 오브젝트를 표현할 수 있었습니다.
-```
+Actor 방식은 하나씩 Spawn하다 보니 생성 시간이 가장 오래 걸렸고, Draw Calls도 가장 높게 나왔습니다.  
+반면 ISM/HISM은 인스턴스로 등록해서 생성 시간이 크게 줄었습니다.
+
+HISM은 ISM보다 Draw Calls가 조금 더 나오긴 했지만, FPS와 GPU 시간은 더 안정적이었습니다.  
+Chunk-HISM도 단일 HISM보다 비용이 조금 늘었지만, 청크 관리와 ID/Socket 상태 관리까지 같이 처리해야 했기 때문에 현재 구조에서는 가장 현실적인 선택이라고 판단했습니다.
 
 #### 이미지/GIF 추천 위치
 
@@ -866,14 +856,14 @@ PC 사양, 해상도, 빌드 타입, 맵 상태에 따라 결과가 달라질 �
 
 | 항목 | 값 |
 |---|---|
-| CPU | [ ] |
-| GPU | [ ] |
-| RAM | [ ] |
-| OS | [ ] |
-| Unreal Engine Version | [엔진 버전 직접 입력] |
-| Build Type | Development 패키징 권장, Editor 측정 시 별도 표기 |
-| Resolution | [예: 1920x1080] |
-| 측정 횟수 | [예: 3~5회 평균] |
+| CPU | Intel i9 12900kf |
+| GPU | GeForce RTX 3050 |
+| RAM | DDR4 32GB |
+| OS | 윈도우 11 |
+| Unreal Engine Version | 4.26|
+| Build Type | Editor PIE - New Editor Window |
+| Resolution | 1280*720 |
+| 측정 횟수 | 평균 3~5회 |
 
 ### Build Type 기준
 

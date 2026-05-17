@@ -225,20 +225,20 @@ Damage / Upgrade / Destroy / Harvest / Save 처리
 
 #### 측정 결과
 
-| 방식 | 생성 시간(ms) | 평균 FPS | Game(ms) | Draw/Render(ms) | GPU(ms) | Draw Calls | 비고 |
-|---|---:|---:|---:|---:|---:|---:|---|
-| Actor | 2,155.835 | 68.0 | 14.7 | 0.25 | 14.7 | 4,676 | 개별 Actor 4,500개 |
-| ISM | 15.291 | 81.5 | 8.8 | 0.25 | 12.8 | 1,096 | 단일 ISM Component |
-| HISM | 15.631 | 129.0 | 7.0 | 0.25 | 8.2 | 1,254 | 단일 HISM Component |
-| Chunk-HISM | 28.795 | 131.0 | 7.1 | 0.25 | 8.2 | 1,614 | 청크 단위 HISM 관리 |
+| 방식 | 생성 시간(ms) | 평균 FPS | Game Thread(ms) | GPU(ms) | Draw Calls | 비고 |
+|---|---:|---:|---:|---:|---:|---|
+| Actor | 2,155.8 | 68.0 | 14.7 | 14.7 | 4,676 | 개별 Actor 4,500개 Spawn |
+| ISM | 15.3 | 81.5 | 8.8 | 12.8 | 1,096 | 단일 ISM Component |
+| HISM | 15.6 | 129.0 | 7.0 | 8.2 | 1,254 | 단일 HISM Component |
+| Chunk-HISM | 28.8 | 131.0 | 7.1 | 8.2 | 1,614 | 청크/ID/Socket 관리 포함 |
 
 같은 조건에서 4,500개 오브젝트를 배치해 Actor / ISM / HISM / Chunk-HISM을 비교했습니다.
 
 Actor 방식은 하나씩 Spawn하다 보니 생성 시간이 가장 오래 걸렸고, Draw Calls도 가장 높게 나왔습니다.  
 반면 ISM/HISM은 인스턴스로 등록해서 생성 시간이 크게 줄었습니다.
 
-HISM은 ISM보다 Draw Calls가 조금 더 나오긴 했지만, FPS와 GPU 시간은 더 안정적이었습니다.  
-Chunk-HISM도 단일 HISM보다 비용이 조금 늘었지만, 청크 관리와 ID/Socket 상태 관리까지 같이 처리해야 했기 때문에 현재 구조에서는 가장 현실적인 선택이라고 판단했습니다.
+Chunk-HISM은 단일 HISM보다 생성 시간과 Draw Calls는 증가했지만, FPS/GPU 시간은 거의 같은 수준을 유지했습니다.
+따라서 순수 렌더링만 보면 단일 HISM이 단순하지만, 이 프로젝트에서는 청크 로드/언로드, ID 매핑, Socket 연결 상태 관리가 필요했기 때문에 Chunk-HISM 구조를 선택했습니다.
 
 #### 이미지/GIF 추천 위치
 
@@ -345,12 +345,27 @@ FinalWantedChunks 기준으로 Load / Unload 수행
 
 #### 측정 결과
 
-| 방식 | TotalKnownChunks | ActiveChunks | UnloadedChunks | ActiveTotalInstances | ActiveHISMComponents | AvgLoad(ms) | AvgUnload(ms) | AvgSave(ms) | 비고 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| 전체 로드 | [ ] | [ ] | [ ] | [ ] | [ ] | - | - | - | `bEnableChunkStreaming = false` |
-| StreamingRadius = 1 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | 중심 청크 주변만 로드 |
-| StreamingRadius = 2 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | 반경 확장 비교 |
-| StreamingRadius = 1 + 연결 청크 로드 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | 경계 연결 안정성 비교 |
+Clean은 변경 없이 이동하며 순수 청크 로드/언로드 비용을 측정한 경우이고, Dirty Unload는 활성 청크마다 건축물 1개를 추가한 뒤 언로드 비용을 측정한 경우입니다.
+
+`AvgCacheFlush(ms)`는 디스크 저장 시간이 아니라, 언로드 전 Dirty Chunk를 Runtime SaveData 캐시에 반영하는 평균 시간입니다.
+
+| 방식 | TotalKnownChunks | ActiveChunks | UnloadedChunks | ActiveTotalInstances | ActiveHISMComponents | AvgLoad(ms) | AvgUnload(ms) | DirtyFlushCount | AvgCacheFlush(ms) | 비고 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 전체 로드 | 49 | 49 | 0 | 2729 | 980 | - | - | - | - | `bEnableChunkStreaming = false`, 7x7 청크 전체 상시 로드 |
+| StreamingRadius = 1 - Clean | 49 | 9 | 40 | 507 | 180 | 1.185 | 0.436 | 0 | - | 중심 청크 포함 3x3만 유지, 변경 없이 이동 |
+| StreamingRadius = 1 - Dirty Unload | 49 | 9 | 40 | 516 | 180 | 1.203 | 0.474 | 9 | 0.117 | 9개 청크에 건축물 1개씩 추가 후 해당 청크 언로드 |
+| StreamingRadius = 2 - Clean | 49 | 25 | 24 | 1385 | 500 | 1.205 | 0.436 | 0 | - | 중심 청크 포함 5x5 유지, 변경 없이 이동 |
+| StreamingRadius = 2 - Dirty Unload | 49 | 25 | 24 | 1410 | 500 | 1.224 | 0.528 | 25 | 0.178 | 25개 청크에 건축물 1개씩 추가 후 해당 청크 언로드 |
+| Radius = 1 + 연결 청크 로드 - Clean | 49 | 10 | 39 | 562 | 200 | 1.219 | 0.440 | 0 | - | 기본 3x3 + SocketMap 기반 연결 청크 1개 추가 로드 |
+| Radius = 1 + 연결 청크 로드 - Dirty Unload | 49 | 10 | 39 | 572 | 200 | 1.254 | 0.494 | 10 | 0.107 | 연결 포함 10개 청크에 건축물 1개씩 추가 후 해당 청크 언로드 |
+
+측정 결과, 전체 월드를 계속 유지하지 않고 플레이어 주변 청크만 남기는 방식으로 월드에 남아 있는 HISM 인스턴스와 Component 수를 크게 줄일 수 있었습니다.
+
+Dirty Unload 상황에서도 Runtime SaveData 캐시 반영 비용은 0.1ms대로 유지되어, 변경된 청크를 언로드하기 전에 캐시에 반영하는 비용은 크지 않다고 봤습니다.
+
+연결 청크 로드는 기본 반경 밖의 청크를 일부 더 로드하지만, 건축물의 소켓 연결과 지지 구조를 유지하기 위해 감수할 만한 비용이라고 판단했습니다.
+
+그래서 현재 구조에서는 청크 스트리밍이 월드 유지 비용을 줄이면서도, 건축물 연결과 저장 동기화를 안정적으로 처리하는 데 적합하다고 봤습니다.
 
 #### 이미지/GIF 추천 위치
 

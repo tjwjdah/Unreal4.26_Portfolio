@@ -23,7 +23,7 @@
   - [5.6 인벤토리 / 제작 / 퀘스트 UI](#inventory-crafting-quest)
   - [5.7 AI 전투 시스템](#ai-combat)
 - [6. 코드 구조](#code-structure)
-- [7. 측정 방법 / 재현 조건](#measurement-method)
+- [7. 공통 측정 환경](#measurement-method)
 - [8. 설계상 트레이드오프](#tradeoffs)
 - [9. 한 줄 요약](#one-line-summary)
 
@@ -638,19 +638,6 @@ Anchor가 없으면 해당 연결 컴포넌트의 건축물들을 함께 제거
 이 방식은 매번 주변 충돌 검사를 반복하지 않고, 실제 배치 과정에서 확정된 연결 정보만 사용합니다.
 그래서 가까이 있지만 연결되지 않은 건축물이 잘못 포함되는 문제를 줄이고, 대량 파괴 상황도 연결 그래프 단위로 처리할 수 있습니다.
 
-#### 선택적으로 넣을 수 있는 정량 지표
-
-이 섹션은 성능 수치보다 기능 안정성 지표와 GIF가 더 효과적입니다.
-
-| 항목 | 값 | 설명 |
-|---|---:|---|
-| 지원 건축물 타입 수 | [ ] | Foundation, Wall, Ceiling, DoorFrame, Door, Window, Stairs 등 |
-| Socket 기반 연결 테스트 수 | [ ] | 수동 테스트 또는 자동 테스트 기준 |
-| 중복 배치 방지 케이스 수 | [ ] | 이미 사용 중인 SocketMap 검증 케이스 |
-| 업그레이드 단계 수 | [ ] | Wood → Stone → Metal 등 |
-| 내구도 단계 | [ ] | 재질별 Durability 값 |
-| 연결 파괴 테스트 수 | [ ] | Anchor 유무에 따른 연결 구조 파괴 검증 |
-
 #### 추천 이미지/GIF 위치
 
 | 위치 | 추천 자료 |
@@ -721,7 +708,6 @@ struct FBuildDefinitionInfo : public FTableRowBase
     FString UpgradeName;
 };
 ```
-
 #### 구현 포인트
 
 - 건축물 클래스와 메시를 Soft Reference로 관리합니다.
@@ -730,14 +716,35 @@ struct FBuildDefinitionInfo : public FTableRowBase
 - 배치 가능 여부에 따라 성공/실패 머티리얼을 적용합니다.
 - 배치 확정 시 정적 건축물은 Actor를 유지하지 않고 Chunk HISM 인스턴스로 전환합니다.
 
-#### 측정 결과
+#### 적용 방식
 
-| 항목 | 측정/기록 값 | 설명 |
-|---|---:|---|
-| Build DataTable Row 수 | [ ] | 등록된 건축물 정의 개수 |
-| Soft Reference 최초 로드 시간(ms) | [ ] | 건축물 첫 선택 시 로드 시간 |
-| 캐시 재사용 로드 시간(ms) | [ ] | 같은 건축물을 다시 선택했을 때 걸린 시간 |
-| 코드 수정 없이 추가 가능한 건축물 수 | [ ] | DataTable Row 추가만으로 확장 가능한 항목 |
+| 항목 | 적용 방식 |
+|---|---|
+| 건축물 정의 | `FBuildDefinitionInfo` DataTable |
+| 에셋 참조 | `TSoftClassPtr`, `TSoftObjectPtr` |
+| 로드 방식 | 선택 시 비동기 로드 |
+| 재사용 방식 | `UBuildAssetSubsystem` 캐시 |
+| 확장 방식 | DataTable Row 추가로 건축물 정의 확장 |
+
+#### 건축물 선택 및 배치 흐름
+
+```text
+Build UI에서 건축물 선택
+    ↓
+DataTable Row 조회
+    ↓
+Soft Reference 에셋 비동기 로드
+    ↓
+로드 완료 후 캐시에 저장
+    ↓
+Preview Actor 생성
+    ↓
+배치 가능 여부 검사
+    ↓
+배치 확정
+    ↓
+정적 건축물은 Chunk HISM Instance로 등록
+```
 
 #### 이미지/GIF 추천 위치
 
@@ -811,18 +818,6 @@ PP/PPGameInstance.cpp
 - Player Detect Service에서 거리와 각도를 기준으로 타겟을 감지합니다.
 - Decorator로 거리 조건과 보스 Phase 조건을 판단합니다.
 - 보스 Morigesh는 Phase에 따라 보호막, 좀비 소환, 폭발, 메테오, 단검 공격 패턴을 사용합니다.
-/*
-#### 측정 결과
-
-AI는 수치보다 영상/GIF가 더 잘 보입니다. 그래도 수치를 넣는다면 아래 정도가 적당합니다.
-
-| 항목 | 값 | 설명 |
-|---|---:|---|
-| Behavior Tree Task 수 | [ ] | Patrol, Trace, Attack, Getaway, Boss Phase 등 |
-| Service / Decorator 수 | [ ] | 감지, 거리 체크, Phase 체크 등 |
-| 보스 Phase 수 | [ ] | Morigesh Phase 패턴 수 |
-| 보스 스킬 수 | [ ] | 보호막, 소환, 폭발, 메테오 등 |
-*/ 측정 안할꺼
 
 #### 이미지/GIF 추천 위치
 
@@ -871,12 +866,7 @@ PP/
 ---
 
 <a id="measurement-method"></a>
-## 7. 측정 방법 / 재현 조건
-
-성능 수치를 넣을 때는 숫자만 적기보다 **측정 조건**을 같이 적는 게 좋습니다.  
-PC 사양, 해상도, 빌드 타입, 맵 상태에 따라 결과가 달라질 수 있기 때문입니다.
-
-### 공통 측정 환경
+## 7. 공통 측정 환경
 
 | 항목 | 값 |
 |---|---|
@@ -889,49 +879,6 @@ PC 사양, 해상도, 빌드 타입, 맵 상태에 따라 결과가 달라질 �
 | Resolution | 1280*720 |
 | 측정 횟수 | 평균 3~5회 |
 
-### Build Type 기준
-
-최종 README에 넣을 수치는 하나의 빌드 타입을 정해서 여러 번 측정하는 편이 좋습니다.  
-포트폴리오용 표라면 Editor보다는 패키징된 Development 또는 Shipping 기준을 추천합니다.
-
-Editor 측정값을 사용할 경우에는 “Editor 기준 측정”이라고 따로 적는 게 좋습니다.  
-Editor와 Development/Shipping 결과를 같은 표에 섞으면 비교가 애매해질 수 있습니다.
-
-```text
-추천: Development 또는 Shipping 중 하나를 선택해 3~5회 평균 측정
-참고: Editor 측정값은 디버깅용으로 분리 표기
-```
-
-### 추천 측정 항목
-
-| 구분 | 추천 지표 | README 반영 위치 |
-|---|---|---|
-| Actor / ISM / HISM 비교 | 생성 시간, FPS, Game/Render/GPU ms, Draw Calls, Actor 수 | `5.1 HISM 기반 청크 월드 관리` |
-| 청크 스트리밍 | ActiveChunks, ActiveInstances, ActiveHISMComponents, AvgLoad/Unload/Save ms | `5.2 플레이어 위치 기반 청크 스트리밍` |
-| Dirty Save | Save Time, DirtyChunkCount, Save Slot Size | `5.3 Dirty Chunk 기반 저장/로드` |
-| 에셋 비동기 로드 | 최초 로드 시간, 캐시 재사용 시간 | `5.5 데이터 기반 건축 시스템과 에셋 로드` |
-| 소켓 연결 안정성 | 경계 연결 테스트 수, 연결 유지 성공률, Anchor 기준 파괴 테스트 수 | `5.4 소켓 기반 건축 연결과 HISM ↔ Actor Hybrid` |
-
-### 간단한 측정 코드 예시
-
-```cpp
-double StartSeconds = FPlatformTime::Seconds();
-
-RunTargetLogic();
-
-float ElapsedMs = static_cast<float>((FPlatformTime::Seconds() - StartSeconds) * 1000.0);
-UE_LOG(LogTemp, Log, TEXT("[Benchmark] Elapsed: %.3f ms"), ElapsedMs);
-```
-
-### 측정 시 주의사항
-
-- 직접 측정하지 않은 수치는 넣지 않습니다.
-- Editor와 패키징 빌드 측정값은 구분합니다.
-- 평균값을 쓰면 `3회 평균`, `5회 평균`처럼 기준을 같이 적습니다.
-- 표는 너무 많이 넣기보다 핵심 비교표 2~3개 정도가 읽기 좋습니다.
-- 성능 수치가 어울리지 않는 기능은 GIF나 기능 범위 수치로 보여주는 편이 낫습니다.
-
----
 
 <a id="tradeoffs"></a>
 ## 8. 설계상 트레이드오프

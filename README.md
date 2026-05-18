@@ -12,8 +12,8 @@
 
 - [1. 프로젝트 개요](#overview)
 - [2. 핵심 기술 요약](#tech-summary)
-- [3. 주요 기능 요약](#feature-summary)
-- [4. 시스템 구조](#system-architecture)
+- [3. 시스템 구조](#feature-summary) 
+- [4. 주요 기능 요약](#system-architecture)
 - [5. 핵심 기술 상세](#core-tech)
   - [5.1 HISM 기반 청크 월드 관리](#hism-chunk-world)
   - [5.2 플레이어 위치 기반 청크 스트리밍](#chunk-streaming)
@@ -42,13 +42,8 @@
 | 개발 인원 | 1명 |
 | 개발 기간 | 3~4개월 |
 
-### 핵심 목표
-
-- 건축물과 자원을 개별 Actor가 아닌 **HISM 인스턴스**로 관리합니다.
-- HISM이 자체 상태를 가질 수 없는 문제는 **BuildingID / ResourceID 기반 상태 관리**합니다.
-- 플레이어 주변 청크만 로드하고, 멀어진 청크는 SaveData 캐시에 반영한 뒤 언로드합니다.
-- 건축물 배치, 소켓 연결, 내구도, 업그레이드, 파괴, 저장/로드를 하나의 흐름으로 묶습니다
-- 건축물, 아이템, 퀘스트 정보는 DataTable로 분리해 확장성을 높힙니다.
+이 프로젝트에서는 건축물과 자원을 개별 Actor로 계속 유지하지 않고, **HISM 인스턴스 + ID 기반 상태 관리**로 처리했습니다.  
+플레이어 주변 청크만 로드하고, 멀어진 청크는 SaveData 캐시에 반영한 뒤 언로드해 월드 유지 비용을 줄였습니다.
 
 ---
 
@@ -58,9 +53,9 @@
 | 핵심 기술 | 설명 |
 |---|---|
 | HISM 기반 오브젝트 관리 | 건축물과 자원을 HISM 인스턴스로 등록해 Actor / Component 수 증가를 줄였습니다. |
-| ID ↔ InstanceIndex 매핑 | HISM 인스턴스를 개별 오브젝트처럼 다루기 위해 `BuildingID` / `ResourceID`를 Hit된 HISM Component `InstanceIndex`와 매핑했습니다. |
-| Chunk Streaming | 플레이어 위치 기준으로 필요한 청크만 로드하고, 범위 밖 청크는 저장 캐시에 반영 후 언로드합니다. |
-| Connected Chunk Loading | 청크 밖에 연결된 건축물이 누락되지 않도록 `SocketMap`을 따라 필요한 청크를 추가 로드합니다. |
+| ID ↔ InstanceIndex 매핑 | BuildingID / ResourceID를 HISM InstanceIndex와 연결해 개별 오브젝트처럼 다뤘습니다. |
+| Chunk Streaming | 플레이어 위치 기준으로 필요한 청크만 로드하고, 범위 밖 청크는 캐시에 반영한 뒤 언로드했습니다. |
+| Connected Chunk Loading | 청크 밖에 연결된 건축물이 누락되지 않도록 `SocketMap`을 따라 필요한 청크를 추가 로드했습니다. |
 | Dirty Chunk Save | 전체 월드를 매번 저장하지 않고, 변경된 청크만 SaveData에 반영합니다. |
 | DataTable + Soft Reference | 건축물, 아이템, 퀘스트 정보를 DataTable로 분리하고, 건축 프리뷰 에셋은 비동기로 로드해 캐싱합니다. |
 | HISM ↔ Actor Hybrid | 정적 건축물은 HISM으로 줄이고, 문처럼 상호작용이 필요한 오브젝트는 Actor로 유지했습니다. |
@@ -85,21 +80,8 @@ flowchart LR
 
 ---
 
-<a id="feature-summary"></a>
-## 3. 주요 기능 요약
-
-| 구분 | 주요 구현 내용 |
-|---|---|
-| 월드 / 청크 시스템 | 플레이어 주변 청크를 로드/언로드하고, HISM Hit 결과를 `BuildingID` / `ResourceID`로 역조회해 채집, 파괴, 업그레이드, 저장/로드에 사용했습니다. |
-| 건축 시스템 | 건축 모드, 프리뷰, 충돌 검사, 소켓 스냅, 배치, 내구도, 파괴, 업그레이드, 문 상호작용을 구현했습니다. |
-| 저장 / 로드 | 청크별 건축물, 자원, 부착형 Actor, 소켓 연결 정보를 저장하고 다시 복원합니다. |
-| 인벤토리 / 제작 / 퀘스트 | UMG 기반 인벤토리와 퀵슬롯, 아이템 스택, 제작 UI, 사냥/제작 등 퀘스트 진행도와 보상 지급을 구현했습니다.|
-| 전투 / AI | 장비 타입별 공격, 활 조준/발사, 스태미나 소모, Behavior Tree 기반 몬스터 AI, 보스 Phase 패턴을 구현했습니다. |
-
----
-
 <a id="system-architecture"></a>
-## 4. 시스템 구조
+## 3. 시스템 구조
 
 ```mermaid
 flowchart TD
@@ -122,6 +104,20 @@ flowchart TD
     Quest --> QuestData[FQuestTableInfo DataTable]
     Monster[Monster / Morigesh] --> BT[Behavior Tree Tasks]
 ```
+
+
+---
+
+<a id="feature-summary"></a>
+## 4. 주요 기능 요약
+
+| 구분 | 주요 구현 내용 |
+|---|---|
+| 월드 / 청크 시스템 | 플레이어 주변 청크를 로드/언로드하고, HISM Hit 결과를 `BuildingID` / `ResourceID`로 역조회해 채집, 파괴, 업그레이드, 저장/로드에 사용했습니다. |
+| 건축 시스템 | 건축 모드, 프리뷰, 충돌 검사, 소켓 스냅, 배치, 내구도, 파괴, 업그레이드, 문 상호작용을 구현했습니다. |
+| 저장 / 로드 | 청크별 건축물, 자원, 부착형 Actor, 소켓 연결 정보를 저장하고 다시 복원합니다. |
+| 인벤토리 / 제작 / 퀘스트 | UMG 기반 인벤토리와 퀵슬롯, 아이템 스택, 제작 UI, 사냥/제작 등 퀘스트 진행도와 보상 지급을 구현했습니다.|
+| 전투 / AI | 장비 타입별 공격, 활 조준/발사, 스태미나 소모, Behavior Tree 기반 몬스터 AI, 보스 Phase 패턴을 구현했습니다. |
 
 ---
 
@@ -349,15 +345,15 @@ Clean은 변경 없이 이동하며 순수 청크 로드/언로드 비용을 측
 
 `AvgCacheFlush(ms)`는 디스크 저장 시간이 아니라, 언로드 전 Dirty Chunk를 Runtime SaveData 캐시에 반영하는 평균 시간입니다.
 
-| 방식 | TotalKnownChunks | ActiveChunks | UnloadedChunks | ActiveTotalInstances | ActiveHISMComponents | AvgLoad(ms) | AvgUnload(ms) | DirtyFlushCount | AvgCacheFlush(ms) | 비고 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| 전체 로드 | 49 | 49 | 0 | 2729 | 980 | - | - | - | - | `bEnableChunkStreaming = false`, 7x7 청크 전체 상시 로드 |
-| StreamingRadius = 1 + Clean | 49 | 9 | 40 | 507 | 180 | 1.185 | 0.436 | 0 | - | 중심 청크 포함 3x3만 유지, 변경 없이 이동 |
-| StreamingRadius = 1 + Dirty Unload | 49 | 9 | 40 | 516 | 180 | 1.203 | 0.474 | 9 | 0.117 | 9개 청크에 건축물 1개씩 추가 후 해당 청크 언로드 |
-| StreamingRadius = 2 + Clean | 49 | 25 | 24 | 1385 | 500 | 1.205 | 0.436 | 0 | - | 중심 청크 포함 5x5 유지, 변경 없이 이동 |
-| StreamingRadius = 2 + Dirty Unload | 49 | 25 | 24 | 1410 | 500 | 1.224 | 0.528 | 25 | 0.178 | 25개 청크에 건축물 1개씩 추가 후 해당 청크 언로드 |
-| Radius = 1 + 연결 청크 로드 + Clean | 49 | 10 | 39 | 562 | 200 | 1.219 | 0.440 | 0 | - | 기본 3x3 + SocketMap 기반 연결 청크 1개 추가 로드 |
-| Radius = 1 + 연결 청크 로드 + Dirty Unload | 49 | 10 | 39 | 572 | 200 | 1.254 | 0.494 | 10 | 0.107 | 연결 포함 10개 청크에 건축물 1개씩 추가 후 해당 청크 언로드 |
+| 방식 | ActiveChunks | ActiveTotalInstances | ActiveHISMComponents | AvgLoad(ms) | AvgUnload(ms) | AvgCacheFlush(ms) | 비고 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| 전체 로드 | 49 | 2729 | 980 | - | - | - | - | `bEnableChunkStreaming = false`, 7x7 청크 전체 상시 로드 |
+| StreamingRadius = 1 + Clean | 9 | 507 | 180 | 1.185 | 0.436 | - | 중심 청크 포함 3x3만 유지, 변경 없이 이동 |
+| StreamingRadius = 1 + Dirty Unload | 9 | 516 | 180 | 1.203 | 0.474 | 0.117 | 9개 청크에 건축물 1개씩 추가 후 해당 청크 언로드 |
+| StreamingRadius = 2 + Clean | 25 | 1385 | 500 | 1.205 | 0.436 | - | 중심 청크 포함 5x5 유지, 변경 없이 이동 |
+| StreamingRadius = 2 + Dirty Unload | 25 | 1410 | 500 | 1.224 | 0.528 | 0.178 | 25개 청크에 건축물 1개씩 추가 후 해당 청크 언로드 |
+| Radius = 1 + 연결 청크 로드 + Clean | 10 | 562 | 200 | 1.219 | 0.440 | - | 기본 3x3 + SocketMap 기반 연결 청크 1개 추가 로드 |
+| Radius = 1 + 연결 청크 로드 + Dirty Unload | 10 | 572 | 200 | 1.254 | 0.494 | 0.107 | 연결 포함 10개 청크에 건축물 1개씩 추가 후 해당 청크 언로드 |
 
 측정 결과, 전체 월드를 계속 유지하지 않고 플레이어 주변 청크만 남기는 방식으로 월드에 남아 있는 HISM 인스턴스와 Component 수를 크게 줄일 수 있었습니다.
 

@@ -342,19 +342,45 @@ FinalWantedChunks 기준으로 Load / Unload 수행
 
 #### 측정 결과
 
-Clean은 변경 없이 이동하며 순수 청크 로드/언로드 비용을 측정한 경우이고, Dirty Unload는 활성 청크마다 건축물 1개를 추가한 뒤 언로드 비용을 측정한 경우입니다.
+Clean은 변경 없이 이동하며 순수 청크 로드 / 언로드 비용을 측정한 경우이고, Dirty는 활성 청크마다 건축물 1개를 추가한 뒤 언로드 비용을 측정한 경우입니다.
+
+##### 측정 조건
+
+| 케이스 | 조건 |
+|---|---|
+| 전체 로드 | 7x7 청크 전체를 상시 로드 |
+| Radius 1, Clean | 중심 청크 포함 3x3 유지, 변경 없이 이동 |
+| Radius 1, Dirty | 9개 청크에 건축물 1개씩 추가 후 언로드 |
+| Radius 2, Clean | 중심 청크 포함 5x5 유지, 변경 없이 이동 |
+| Radius 2, Dirty | 25개 청크에 건축물 1개씩 추가 후 언로드 |
+| Radius 1, Connected Clean | 기본 3x3 + 연결 청크 1개 추가 로드 |
+| Radius 1, Connected Dirty | 연결 포함 10개 청크에 건축물 1개씩 추가 후 언로드 |
+
+##### 활성 오브젝트 수
+
+| 방식 | ActiveChunks | ActiveInstances | ActiveHISMComp | 
+|---| ---: |---:|---:|
+| 전체 로드 | 49 | 2729 | 980 |
+| Radius 1, Clean | 9 | 507 | 180 |
+| Radius 1, Dirty | 9 | 516 | 180 | 
+| Radius 2, Clean | 25 | 1385 | 500 | 
+| Radius 2, Dirty | 25 | 1410 | 500 |
+| Radius 1, Connected Clean | 10 | 562 | 200 |
+| Radius 1, Connected Dirty | 10 | 572 | 200 |
+
+##### 로드 / 언로드 비용
 
 `AvgCacheFlush`는 디스크 저장 시간이 아니라, 언로드 전 Dirty Chunk를 Runtime SaveData 캐시에 반영하는 평균 시간(ms)입니다.
 
-| 방식 | ActiveChunks | ActiveInstances | ActiveHISMComp | AvgLoad(ms) | AvgUnload(ms) | DirtyFlushCount | AvgCacheFlush(ms) | 비고 |
-|---|---:|---:|---:|---:|---:|---:|---:|---|
-| 전체 로드 | 49 | 2729 | 980 | - | - | - | - | 7x7 청크 전체 상시 로드 |
-| Radius 1, Clean | 9 | 507 | 180 | 1.185 | 0.436 | 0 | - | 중심 청크 포함 3x3 유지 |
-| Radius 1, Dirty Unload | 9 | 516 | 180 | 1.203 | 0.474 | 9 | 0.117 | 9개 청크에 건축물 1개씩 추가 후 언로드 |
-| Radius 2, Clean | 25 | 1385 | 500 | 1.205 | 0.436 | 0 | - | 중심 청크 포함 5x5 유지 |
-| Radius 2, Dirty Unload | 25 | 1410 | 500 | 1.224 | 0.528 | 25 | 0.178 | 25개 청크에 건축물 1개씩 추가 후 언로드 |
-| Radius 1 + 연결 청크, Clean | 10 | 562 | 200 | 1.219 | 0.440 | 0 | - | 기본 3x3 + 연결 청크 1개 추가 로드 |
-| Radius 1 + 연결 청크, Dirty Unload | 10 | 572 | 200 | 1.254 | 0.494 | 10 | 0.107 | 연결 포함 10개 청크에 건축물 1개씩 추가 후 언로드 |
+| 케이스 | AvgLoad(ms) | AvgUnload(ms) | DirtyFlushCount | AvgCacheFlush(ms) |
+|---|---:|---:|---:|---:|
+| 전체 로드 | - | - | - | - |
+| Radius 1, Clean | 1.185 | 0.436 | 0 | - |
+| Radius 1, Dirty | 1.203 | 0.474 | 9 | 0.117 |
+| Radius 2, Clean | 1.205 | 0.436 | 0 | - |
+| Radius 2, Dirty | 1.224 | 0.528 | 25 | 0.178 |
+| Radius 1, Connected Clean | 1.219 | 0.440 | 0 | - |
+| Radius 1, Connected Dirty | 1.254 | 0.494 | 10 | 0.107 |
 
 측정 결과, 전체 월드를 계속 유지하지 않고 플레이어 주변 청크만 남기는 방식으로 월드에 남아 있는 HISM 인스턴스와 Component 수를 크게 줄일 수 있었습니다.
 

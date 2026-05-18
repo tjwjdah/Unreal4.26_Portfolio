@@ -84,7 +84,7 @@ flowchart LR
 
 ---
 
-<a id="system-architecture"></a>
+<a id="feature-summary"></a>
 ## 3. 시스템 구조
 
 ```mermaid
@@ -111,7 +111,7 @@ flowchart TD
 
 ---
 
-<a id="feature-summary"></a>
+<a id="system-architecture"></a>
 ## 4. 주요 기능 요약
 
 | 구분 | 주요 구현 내용 |

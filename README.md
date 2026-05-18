@@ -11,8 +11,8 @@
 
 - [1. 프로젝트 개요](#overview)
 - [2. 핵심 기술 요약](#tech-summary)
-- [3. 주요 기능 요약](#feature-summary)
-- [4. 시스템 구조](#system-architecture)
+- [3. 시스템 구조](#feature-summary)
+- [4. 주요 기능 요약](#system-architecture)
 - [5. 핵심 기술 상세](#core-tech)
   - [5.1 HISM 기반 청크 월드 관리](#hism-chunk-world)
   - [5.2 플레이어 위치 기반 청크 스트리밍](#chunk-streaming)
@@ -84,21 +84,8 @@ flowchart LR
 
 ---
 
-<a id="feature-summary"></a>
-## 3. 주요 기능 요약
-
-| 구분 | 주요 구현 내용 |
-|---|---|
-| 월드 / 청크 시스템 | 플레이어 주변 청크를 로드/언로드하고, HISM Hit 결과를 `BuildingID` / `ResourceID`로 역조회해 채집, 파괴, 업그레이드, 저장/로드에 사용했습니다. |
-| 건축 시스템 | 건축 모드, 프리뷰, 충돌 검사, 소켓 스냅, 배치, 내구도, 파괴, 업그레이드, 문 상호작용을 구현했습니다. |
-| 저장 / 로드 | 청크별 건축물, 자원, 부착형 Actor, 소켓 연결 정보를 저장하고 다시 복원합니다. |
-| 인벤토리 / 제작 / 퀘스트 | UMG 기반 인벤토리와 퀵슬롯, 아이템 스택, 제작 UI, 사냥/제작 등 퀘스트 진행도와 보상 지급을 구현했습니다.|
-| 전투 / AI | 장비 타입별 공격, 활 조준/발사, 스태미나 소모, Behavior Tree 기반 몬스터 AI, 보스 Phase 패턴을 구현했습니다. |
-
----
-
 <a id="system-architecture"></a>
-## 4. 시스템 구조
+## 3. 시스템 구조
 
 ```mermaid
 flowchart TD
@@ -121,6 +108,19 @@ flowchart TD
     Quest --> QuestData[FQuestTableInfo DataTable]
     Monster[Monster / Morigesh] --> BT[Behavior Tree Tasks]
 ```
+
+---
+
+<a id="feature-summary"></a>
+## 4. 주요 기능 요약
+
+| 구분 | 주요 구현 내용 |
+|---|---|
+| 월드 / 청크 시스템 | 플레이어 주변 청크를 로드/언로드하고, HISM Hit 결과를 `BuildingID` / `ResourceID`로 역조회해 채집, 파괴, 업그레이드, 저장/로드에 사용했습니다. |
+| 건축 시스템 | 건축 모드, 프리뷰, 충돌 검사, 소켓 스냅, 배치, 내구도, 파괴, 업그레이드, 문 상호작용을 구현했습니다. |
+| 저장 / 로드 | 청크별 건축물, 자원, 부착형 Actor, 소켓 연결 정보를 저장하고 다시 복원합니다. |
+| 인벤토리 / 제작 / 퀘스트 | UMG 기반 인벤토리와 퀵슬롯, 아이템 스택, 제작 UI, 사냥/제작 등 퀘스트 진행도와 보상 지급을 구현했습니다.|
+| 전투 / AI | 장비 타입별 공격, 활 조준/발사, 스태미나 소모, Behavior Tree 기반 몬스터 AI, 보스 Phase 패턴을 구현했습니다. |
 
 ---
 

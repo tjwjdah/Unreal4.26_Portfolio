@@ -347,12 +347,12 @@ Clean은 변경 없이 이동하며 순수 청크 로드/언로드 비용을 측
 
 | 방식 | ActiveChunks | ActiveTotalInstances | ActiveHISMComponents | AvgLoad(ms) | AvgUnload(ms) | AvgCacheFlush(ms) | 비고 |
 |---|---:|---:|---:|---:|---:|---:|---|
-| 전체 로드 | 49 | 2729 | 980 | - | - | - | - | `bEnableChunkStreaming = false`, 7x7 청크 전체 상시 로드 |
-| StreamingRadius = 1 + Clean | 9 | 507 | 180 | 1.185 | 0.436 | - | 중심 청크 포함 3x3만 유지, 변경 없이 이동 |
+| 전체 로드 | 49 | 2729 | 980 | | | | | 7x7 청크 전체 상시 로드 |
+| StreamingRadius = 1 + Clean | 9 | 507 | 180 | 1.185 | 0.436 | | 중심 청크 포함 3x3만 유지, 변경 없이 이동 |
 | StreamingRadius = 1 + Dirty Unload | 9 | 516 | 180 | 1.203 | 0.474 | 0.117 | 9개 청크에 건축물 1개씩 추가 후 해당 청크 언로드 |
-| StreamingRadius = 2 + Clean | 25 | 1385 | 500 | 1.205 | 0.436 | - | 중심 청크 포함 5x5 유지, 변경 없이 이동 |
+| StreamingRadius = 2 + Clean | 25 | 1385 | 500 | 1.205 | 0.436 | | 중심 청크 포함 5x5 유지, 변경 없이 이동 |
 | StreamingRadius = 2 + Dirty Unload | 25 | 1410 | 500 | 1.224 | 0.528 | 0.178 | 25개 청크에 건축물 1개씩 추가 후 해당 청크 언로드 |
-| Radius = 1 + 연결 청크 로드 + Clean | 10 | 562 | 200 | 1.219 | 0.440 | - | 기본 3x3 + SocketMap 기반 연결 청크 1개 추가 로드 |
+| Radius = 1 + 연결 청크 로드 + Clean | 10 | 562 | 200 | 1.219 | 0.440 | | 기본 3x3 + SocketMap 기반 연결 청크 1개 추가 로드 |
 | Radius = 1 + 연결 청크 로드 + Dirty Unload | 10 | 572 | 200 | 1.254 | 0.494 | 0.107 | 연결 포함 10개 청크에 건축물 1개씩 추가 후 해당 청크 언로드 |
 
 측정 결과, 전체 월드를 계속 유지하지 않고 플레이어 주변 청크만 남기는 방식으로 월드에 남아 있는 HISM 인스턴스와 Component 수를 크게 줄일 수 있었습니다.

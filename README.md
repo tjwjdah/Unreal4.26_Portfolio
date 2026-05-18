@@ -1,3 +1,4 @@
+[README_tone_fixed.md](https://github.com/user-attachments/files/27968503/README_tone_fixed.md)
 # Survival Game - Unreal Engine C++ 클라이언트 포트폴리오
 
 > Unreal Engine C++ 기반 3D 생존/액션 게임 클라이언트 프로젝트입니다.  
@@ -54,11 +55,11 @@
 |---|---|
 | HISM 기반 오브젝트 관리 | 건축물과 자원을 HISM 인스턴스로 등록해 Actor / Component 수 증가를 줄였습니다. |
 | ID ↔ InstanceIndex 매핑 | HISM 인스턴스를 개별 오브젝트처럼 다루기 위해 `BuildingID` / `ResourceID`를 Hit된 HISM Component `InstanceIndex`와 매핑했습니다. |
-| Chunk Streaming | 플레이어 위치 기준으로 필요한 청크만 로드하고, 범위 밖 청크는 저장 캐시에 반영 후 언로드합니다. |
-| Connected Chunk Loading | 청크 밖에 연결된 건축물이 누락되지 않도록 `SocketMap`을 따라 필요한 청크를 추가 로드합니다. |
-| Dirty Chunk Save | 전체 월드를 매번 저장하지 않고, 변경된 청크만 SaveData에 반영합니다. |
-| DataTable + Soft Reference | 건축물, 아이템, 퀘스트 정보를 DataTable로 분리하고, 건축 프리뷰 에셋은 비동기로 로드해 캐싱합니다. |
-| HISM ↔ Actor Hybrid | 정적 건축물은 HISM으로 줄이고, 문처럼 상호작용이 필요한 오브젝트는 Actor로 유지했습니다. |
+| Chunk Streaming | 플레이어 위치 기준으로 필요한 청크만 로드하고, 범위 밖 청크는 SaveData 캐시에 반영한 뒤 언로드했습니다. |
+| Connected Chunk Loading | 청크 밖에 연결된 건축물이 누락되지 않도록 `SocketMap`을 따라 필요한 청크를 추가 로드했습니다. |
+| Dirty Chunk Save | 전체 월드를 매번 다시 구성하지 않고, 변경된 청크만 SaveData에 반영했습니다. |
+| DataTable + Soft Reference | 건축물, 아이템, 퀘스트 정보를 DataTable로 분리하고, 건축 프리뷰 에셋은 비동기로 로드해 캐싱했습니다. |
+| HISM ↔ Actor Hybrid | 정적 건축물은 HISM으로 관리하고, 문처럼 상호작용이 필요한 오브젝트는 Actor로 유지했습니다. |
 | Behavior Tree 기반 AI | Task / Service / Decorator로 몬스터 행동과 보스 Phase 패턴을 분리했습니다. |
 
 ### 핵심 설계 흐름
@@ -76,7 +77,7 @@ flowchart LR
 
 단순히 HISM을 사용한 것이 아니라 **HISM 인스턴스에 ID와 상태 데이터를 연결해서, 개별 건축물/자원처럼 조작할 수 있게** 만들었습니다.
 
-청크 스트리밍은 렌더링 컬링과 다르게 멀어진 **청크의 HISM 인스턴스와 충돌 데이터를 실제 월드에서 제거**하고, SaveData 캐시만 남기는 방식으로 동작합니다.
+청크 스트리밍도 단순 렌더링 컬링이 아니라, 멀어진 **청크의 HISM 인스턴스와 충돌 데이터를 실제 월드에서 제거**하고 SaveData 캐시만 남기는 방식으로 구현했습니다.
 
 ---
 
@@ -114,8 +115,8 @@ flowchart TD
 |---|---|
 | 월드 / 청크 시스템 | 플레이어 주변 청크를 로드/언로드하고, HISM Hit 결과를 `BuildingID` / `ResourceID`로 역조회해 채집, 파괴, 업그레이드, 저장/로드에 사용했습니다. |
 | 건축 시스템 | 건축 모드, 프리뷰, 충돌 검사, 소켓 스냅, 배치, 내구도, 파괴, 업그레이드, 문 상호작용을 구현했습니다. |
-| 저장 / 로드 | 청크별 건축물, 자원, 부착형 Actor, 소켓 연결 정보를 저장하고 다시 복원합니다. |
-| 인벤토리 / 제작 / 퀘스트 | UMG 기반 인벤토리와 퀵슬롯, 아이템 스택, 제작 UI, 사냥/제작 등 퀘스트 진행도와 보상 지급을 구현했습니다.|
+| 저장 / 로드 | 청크별 건축물, 자원, 부착형 Actor, 소켓 연결 정보를 저장하고 다시 복원했습니다. |
+| 인벤토리 / 제작 / 퀘스트 | UMG 기반 인벤토리와 퀵슬롯, 아이템 스택, 제작 UI, 사냥/제작 등 퀘스트 진행도와 보상 지급을 구현했습니다. |
 | 전투 / AI | 장비 타입별 공격, 활 조준/발사, 스태미나 소모, Behavior Tree 기반 몬스터 AI, 보스 Phase 패턴을 구현했습니다. |
 
 ---
@@ -132,7 +133,7 @@ flowchart TD
 특히 생존/건축 게임에서는 플레이어가 만든 건축물이 계속 쌓이고, 자원 오브젝트도 월드에 많이 존재합니다.
 
 단순히 Tick을 끄거나 멀리 있는 오브젝트를 숨기는 것만으로는 부족했습니다.  
-그래서 여러 최적화 방식을 찾아봤고, 그중 대량 오브젝트 관리에 가장 적합하다고 판단한 HISM을 기반으로 구조를 바꿨습니다.
+그래서 여러 최적화 방식을 찾아봤고, 그중 대량 오브젝트 관리에 가장 잘 맞는다고 본 HISM을 기반으로 구조를 바꿨습니다.
 
 #### 왜 HISM을 선택했나?
 
@@ -145,7 +146,7 @@ flowchart TD
 | ISM | 같은 Mesh를 인스턴스로 관리 가능 | 공간 단위 관리와 컬링 측면에서 HISM보다 아쉬움 | 후보였지만 HISM이 더 적합 |
 | HISM | 반복 Mesh를 인스턴스로 관리하고 계층 컬링에 유리 | Actor가 아니므로 상태 관리를 직접 해야 함 | ID 기반 상태 구조를 추가해 채택 |
 
-결국 HISM을 기반으로 하되, HISM 인스턴스를 개별 게임 오브젝트처럼 다루기 위한 **ID 기반 관리 구조**를 직접 만들었습니다.
+결국 HISM을 쓰되, HISM 인스턴스를 개별 게임 오브젝트처럼 다루기 위한 **ID 기반 관리 구조**로 만들었습니다.
 
 #### 구현
 
@@ -233,7 +234,7 @@ Actor 방식은 하나씩 Spawn하다 보니 생성 시간이 가장 오래 걸�
 반면 ISM/HISM은 인스턴스로 등록해서 생성 시간이 크게 줄었습니다.
 
 Chunk-HISM은 단일 HISM보다 생성 시간과 Draw Calls는 증가했지만, FPS/GPU 시간은 거의 같은 수준을 유지했습니다.
-따라서 순수 렌더링만 보면 단일 HISM이 단순하지만, 이 프로젝트에서는 청크 로드/언로드, ID 매핑, Socket 연결 상태 관리가 필요했기 때문에 Chunk-HISM 구조를 선택했습니다.
+순수 렌더링만 보면 단일 HISM이 더 가볍지만, 이 프로젝트에서는 청크 로드/언로드, ID 매핑, Socket 연결 상태 관리가 필요했기 때문에 Chunk-HISM 구조를 선택했습니다.
 
 #### 이미지/GIF 추천 위치
 
@@ -312,7 +313,7 @@ TSet<FChunkCoords> FinalWantChunks = BuildConnectedWantedChunkSet(WantChunks);
 - 청크 경계에 걸친 건축물을 위해 연결된 청크도 추가 로드합니다.
 - 연결 그래프가 바뀐 경우에는 `BuildConnectedWantedChunkSet`을 계산하기 전에 `GraphDirtyChunks`에 해당하는 로드 청크를 Runtime SaveData 캐시에 먼저 반영합니다.
 
-#### 트러블 슈팅 : 경계 연결 처리
+#### 보완한 부분: 경계 연결 처리
 
 기본 반경만 로드하면 문제가 생길 수 있습니다.  
 예를 들어 현재 청크의 천장이 바깥 청크의 Foundation에 연결되어 있다면, 바깥 청크가 언로드되면서 지지 구조나 소켓 연결 판정이 어긋날 수 있습니다.
@@ -345,15 +346,15 @@ Clean은 변경 없이 이동하며 순수 청크 로드/언로드 비용을 측
 
 `AvgCacheFlush`는 디스크 저장 시간이 아니라, 언로드 전 Dirty Chunk를 Runtime SaveData 캐시에 반영하는 평균 시간(ms)입니다.
 
-| 방식 | ActiveChunks | ActiveInstances | ActiveHISMComp | AvgLoad | AvgUnload | DirtyFlushCount | AvgCacheFlush |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| 전체 로드 |  49 | 2729 | 980 | - | - | - | - |
-| Radius 1, Clean |  9 |  507 | 180 | 1.185 | 0.436 | 0 | - |
-| Radius 1, Dirty Unload |  9 |  516 | 180 | 1.203 | 0.474 | 9 | 0.117 |
-| Radius 2, Clean | 25 |  1385 | 500 | 1.205 | 0.436 | 0 | - | 중심 청크 포함 5x5 유지, 변경 없이 이동 |
-| Radius 2, Dirty Unload |  25 |  1410 | 500 | 1.224 | 0.528 | 25 | 0.178 |
-| Radius 1, 연결 청크 로드, Clean |  10 | 562 | 200 | 1.219 | 0.440 | 0 | - |
-| Radius 1, 연결 청크 로드, Dirty Unload | 10 | 572 | 200 | 1.254 | 0.494 | 10 | 0.107 |
+| 방식 | ActiveChunks | ActiveInstances | ActiveHISMComp | AvgLoad(ms) | AvgUnload(ms) | DirtyFlushCount | AvgCacheFlush(ms) | 비고 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| 전체 로드 | 49 | 2729 | 980 | - | - | - | - | 7x7 청크 전체 상시 로드 |
+| Radius 1, Clean | 9 | 507 | 180 | 1.185 | 0.436 | 0 | - | 중심 청크 포함 3x3 유지 |
+| Radius 1, Dirty Unload | 9 | 516 | 180 | 1.203 | 0.474 | 9 | 0.117 | 9개 청크에 건축물 1개씩 추가 후 언로드 |
+| Radius 2, Clean | 25 | 1385 | 500 | 1.205 | 0.436 | 0 | - | 중심 청크 포함 5x5 유지 |
+| Radius 2, Dirty Unload | 25 | 1410 | 500 | 1.224 | 0.528 | 25 | 0.178 | 25개 청크에 건축물 1개씩 추가 후 언로드 |
+| Radius 1 + 연결 청크, Clean | 10 | 562 | 200 | 1.219 | 0.440 | 0 | - | 기본 3x3 + 연결 청크 1개 추가 로드 |
+| Radius 1 + 연결 청크, Dirty Unload | 10 | 572 | 200 | 1.254 | 0.494 | 10 | 0.107 | 연결 포함 10개 청크에 건축물 1개씩 추가 후 언로드 |
 
 측정 결과, 전체 월드를 계속 유지하지 않고 플레이어 주변 청크만 남기는 방식으로 월드에 남아 있는 HISM 인스턴스와 Component 수를 크게 줄일 수 있었습니다.
 
@@ -361,7 +362,7 @@ Dirty Unload 상황에서도 Runtime SaveData 캐시 반영 비용은 0.1ms대�
 
 연결 청크 로드는 기본 반경 밖의 청크를 일부 더 로드하지만, 건축물의 소켓 연결과 지지 구조를 유지하기 위해 감수할 만한 비용이라고 판단했습니다.
 
-그래서 현재 구조에서는 청크 스트리밍이 월드 유지 비용을 줄이면서도, 건축물 연결과 저장 동기화를 안정적으로 처리하는 데 적합하다고 봤습니다.
+그래서 현재 구조에서는 청크 스트리밍이 월드 유지 비용을 줄이면서도, 건축물 연결과 저장 동기화를 처리하는데 적합하다고 봤습니다.
 
 #### 이미지/GIF 추천 위치
 
@@ -370,7 +371,7 @@ Dirty Unload 상황에서도 Runtime SaveData 캐시 반영 비용은 0.1ms대�
 | 설계 전환 아래 | 자유 배치 건축물과 청크 격자가 어긋나는 예시 |
 | 구현 아래 | 플레이어 이동에 따라 청크가 로드/언로드되는 GIF |
 | 경계 연결 처리 아래 | 기본 로드 청크와 추가 로드 청크를 색으로 구분한 다이어그램 |
-| 측정 항목 아래 | 전체 로드 vs 청크 스트리밍 ActiveChunks 비교 그래프 |
+| 측정 결과 아래 | 전체 로드 vs 청크 스트리밍 ActiveChunks 비교 그래프 |
 
 #### 관련 코드
 
@@ -391,7 +392,7 @@ AChunkManager::BuildConnectedWantedChunkSet
 
 청크 좌표는 자유 배치된 건축물을 직접 찾는 용도로는 한계가 있었지만 저장/로드 단위로는 잘 맞았습니다.
 
-월드 전체를 매번 저장하면 건축물과 자원이 많아질수록 저장 대상이 계속 커지고, 플레이어가 일부 지역만 수정했더라도 전체 데이터를 다시 구성해야 합니다
+월드 전체를 매번 저장하면 건축물과 자원이 많아질수록 저장 대상이 계속 커지고, 플레이어가 일부 지역만 수정했더라도 전체 데이터를 다시 구성해야 합니다.
 
 그래서 청크를 **변경된 월드 데이터를 묶어서 저장하고 복원하는 단위**로 사용했습니다.
 
@@ -464,7 +465,7 @@ struct FResourceSaveData
 - 청크 언로드 전 Dirty 상태를 SaveData 캐시에 반영
 - 문처럼 HISM에 직접 포함되지 않는 부착형 Actor는 별도 SaveData로 저장
 
-#### 트러블 슈팅 : 스트리밍과 저장 캐시 동기화
+#### 보완한 부분: 스트리밍과 저장 캐시 동기화
 
 청크를 언로드하기 전에 변경 내용을 캐시에 반영하지 않으면, 다시 로드했을 때 이전 상태로 돌아갈 수 있습니다.  
 예를 들어 파괴한 건축물이 다시 생기거나, 업그레이드 전 상태로 복원될 수 있습니다.
@@ -496,7 +497,7 @@ Full Save는 전체 청크를 다시 저장 데이터로 만들고, Dirty Save�
 | 구현 아래 | 전체 저장과 Dirty Save 차이 다이어그램 |
 | 저장 데이터 구조 아래 | BuildingSaveData / ResourceSaveData 관계도 |
 | 캐시 동기화 아래 | Unload 전 SaveData 캐시에 반영되는 흐름도 |
-| 측정 항목 아래 | Full Save / Dirty Save 저장 시간 비교 그래프 |
+| 측정 결과 아래 | Full Save / Dirty Save 저장 시간 비교 그래프 |
 
 #### 관련 코드
 
@@ -530,10 +531,10 @@ AChunkManager::FlushDirtyChunksSaveCache
 벽, 바닥, 천장, 창문, 계단처럼 배치 후 거의 움직이지 않는 건축물은 HISM으로 관리했습니다.  
 많이 배치될 수 있는 오브젝트라 Actor로 하나씩 유지하기엔 부담이 컸기 때문입니다.
 
-하지만 문짝처럼 열림/닫힘, 애니메이션, 충돌 변경이 필요한 오브젝트는 HISM만으로 처리하기 어려웠습니다.  
-그래서 정적 건축물은 HISM으로 줄이고, 문짝처럼 직접 상호작용이 필요한 오브젝트는 Actor로 유지했습니다.
+하지만 문처럼 열림/닫힘, 애니메이션, 충돌 변경이 필요한 오브젝트는 HISM만으로 처리하기 어려웠습니다.  
+그래서 정적 건축물은 HISM으로 줄이고, 문처럼 직접 상호작용이 필요한 오브젝트는 Actor로 유지했습니다.
 
-정적 HISM 건축물은 `BuildingID` 기준으로 관리하고, 문짝 같은 부착형 Actor는 `ParentBuildingID + ParentSocketName`을 키로 `HISMAttachBuildActors`에 등록했습니다. 덕분에 정적 건축물의 소켓 연결/내구도/파괴/업그레이드는 `BuildingMap` 흐름을 사용하고, 부착형 Actor는 부모 건축물의 소켓에 붙은 별도 저장 데이터로 복원할 수 있었습니다.
+정적 HISM 건축물은 `BuildingID` 기준으로 관리하고, 문 같은 부착형 Actor는 `ParentBuildingID + ParentSocketName`을 키로 `HISMAttachBuildActors`에 등록했습니다. 덕분에 정적 건축물의 소켓 연결/내구도/파괴/업그레이드는 `BuildingMap` 흐름을 사용하고, 부착형 Actor는 부모 건축물의 소켓에 붙은 별도 저장 데이터로 복원할 수 있었습니다.
 
 #### 검토한 방식
 
@@ -544,14 +545,14 @@ AChunkManager::FlushDirtyChunksSaveCache
 | HISM으로 두고 상호작용 시에만 임시 Actor 생성 | 평상시 Actor 수를 최소화할 수 있고, 상호작용 오브젝트가 많아질수록 장기적으로 유리 | HISM ↔ Actor 전환 시 Transform, Collision, Animation, 저장 데이터, 소켓 연결 상태를 모두 동기화해야 함 | 장기 개선 후보 |
 | 정적 건축물은 HISM, 상호작용 Actor만 유지 | 현재 프로젝트처럼 상호작용 Actor 개수가 적은 구조에서는 구현이 단순하고 안정적 | 상호작용 Actor가 많아지면 Actor 수와 별도 저장 데이터가 증가 | 현재 프로젝트 범위에서 최종 채택 |
 
-현재 프로젝트에서는 상호작용 오브젝트가 문짝 중심이라 전체 정적 건축물에 비해 수가 적다고 봤습니다. 그래서 **정적 건축물은 HISM으로 관리하고, 문짝 같은 부착형 상호작용 오브젝트만 Actor로 유지하는 방식**으로 구현했습니다.
+현재 프로젝트에서는 상호작용 오브젝트가 문 중심이라 전체 정적 건축물에 비해 수가 적다고 봤습니다. 그래서 **정적 건축물은 HISM으로 관리하고, 문 같은 부착형 상호작용 오브젝트만 Actor로 유지하는 방식**으로 구현했습니다.
 
-다만 보관함, 제작대, 화로, 함정처럼 상태를 가진 상호작용 오브젝트가 많아진다면, 평상시에는 HISM으로 두고 상호작용 시점에만 Actor로 전환하는 구조가 더 적합할 수 있습니다.
+다만 보관함, 제작대, 화로, 함정처럼 상태를 가진 상호작용 오브젝트가 많아진다면, 평상시에는 HISM으로 두고 상호작용 시점에만 Actor로 전환하는 구조가 더 잘 맞을 수 있습니다.
 
 #### 구현
 
-정적 건축물은 HISM 인스턴스로 전환하고, 문짝처럼 상호작용이 필요한 오브젝트는 별도 Actor로 유지했습니다.
-이렇게 하면 많이 배치되는 벽, 바닥, 천장, 창문, 계단은 HISM으로 부담을 줄이고, 문짝은 Actor의 충돌, 함수 호출, Timeline/애니메이션, 상태 저장 구조를 활용할 수 있습니다.
+정적 건축물은 HISM 인스턴스로 전환하고, 문처럼 상호작용이 필요한 오브젝트는 별도 Actor로 유지했습니다.
+이렇게 하면 많이 배치되는 벽, 바닥, 천장, 창문, 계단은 HISM으로 부담을 줄이고, 문은 Actor의 충돌, 함수 호출, Timeline/애니메이션, 상태 저장 구조를 활용할 수 있습니다.
 
 건축물 연결은 Static Mesh Socket을 사용했습니다.
 배치 시 가장 가까운 유효 소켓을 찾아 프리뷰 위치와 회전을 보정하고, 배치 완료 후 SocketMap과 ConnectedBuildingIDs를 갱신했습니다.
@@ -601,7 +602,7 @@ TMap<FAttachBuildKey, ABuildable*> HISMAttachBuildActors;
 
 `ConnectedBuildingIDs`는 이 건축물이 어떤 정적 건축물과 연결되어 있는지 저장합니다. 이 정보는 배치뿐 아니라 저장/로드, 청크 경계 로드, 파괴 후 지지 구조 판정에도 사용했습니다.
 
-문짝 같은 부착형 Actor는 자기만의 `BuildingID`를 새로 발급하지 않고, `ParentBuildingID + ParentSocketName` 조합으로 `HISMAttachBuildActors`에 등록했습니다. 저장 시에는 `FAttachBuildableSaveData`로 부모 ID, 부모 소켓, Transform, 내구도를 따로 기록합니다.
+문 같은 부착형 Actor는 자기만의 `BuildingID`를 새로 발급하지 않고, `ParentBuildingID + ParentSocketName` 조합으로 `HISMAttachBuildActors`에 등록했습니다. 저장 시에는 `FAttachBuildableSaveData`로 부모 ID, 부모 소켓, Transform, 내구도를 따로 기록합니다.
 
 #### 구현 포인트
 
@@ -611,10 +612,10 @@ TMap<FAttachBuildKey, ABuildable*> HISMAttachBuildActors;
 - 부착형 Actor의 중복 배치는 `HISMAttachBuildActors` 키(`ParentBuildingID + ParentSocketName`)로 막았습니다.
 - 배치 완료 시 정적 건축물은 양쪽 `SocketMap` / `ConnectedBuildingIDs`를 서로 등록했습니다.
 - 정적 건축물은 배치 후 HISM 인스턴스로 전환했습니다.
-- 문짝 Actor는 부모 건축물 ID와 소켓 이름을 기준으로 부착 관리했습니다.
+- 문 Actor는 부모 건축물 ID와 소켓 이름을 기준으로 부착 관리했습니다.
 - 정적 소켓 연결 정보는 저장/로드, 청크 경계 연결, 파괴 후 지지 구조 판정에도 사용했습니다.
 
-#### 트러블 슈팅 : 충돌 검사 기반 판정에서 연결 그래프 기반 지지 판정으로 변경
+#### 보완한 부분: 충돌 검사에서 연결 그래프 기반 지지 판정으로 변경
 
 처음에는 건축물이 파괴될 때 주변 충돌 검사를 통해 인접한 건축물을 찾았습니다.  
 하지만 여러 건축물이 한 번에 무너지는 상황에서는 각 건축물마다 충돌 검사가 반복되어 비용이 커졌습니다.
@@ -641,17 +642,17 @@ DestroyBuilding(ID)
 Anchor가 없으면 해당 연결 컴포넌트의 건축물들을 함께 제거
 ```
 
-이 방식은 매번 주변 충돌 검사를 반복하지 않고, 실제 배치 과정에서 확정된 연결 정보만 사용합니다.
+이 방식은 매번 주변 충돌 검사를 반복하지 않고, 실제 배치 과정에서 확정된 연결 정보만 사용한다는 장점이 있습니다.
 그래서 가까이 있지만 연결되지 않은 건축물이 잘못 포함되는 문제를 줄이고, 대량 파괴 상황도 연결 그래프 단위로 처리할 수 있습니다.
 
 #### 추천 이미지/GIF 위치
 
 | 위치 | 추천 자료 |
 |---|---|
-| `왜 소켓 기반으로 연결했는가?` 아래 | 자유 배치와 소켓 스냅의 차이를 보여주는 다이어그램 |
-| `소켓 기반 배치 흐름` 아래 | 프리뷰가 가장 가까운 소켓에 스냅되는 GIF |
+| `문제` 아래 | 자유 배치와 소켓 스냅의 차이를 보여주는 다이어그램 |
+| `구현` 아래 | 프리뷰가 가장 가까운 소켓에 스냅되는 GIF |
 | `구현 포인트` 아래 | SocketMap으로 중복 배치를 막는 다이어그램 |
-| `연결 그래프 기반 지지 판정` 아래 | Anchor 기준 BFS 탐색 후 공중 구조물이 제거되는 GIF |
+| `보완한 부분` 아래 | Anchor 기준 BFS 탐색 후 공중 구조물이 제거되는 GIF |
 | `HISM ↔ Actor Hybrid` 아래 | HISM 건축물과 문 Actor가 함께 저장/로드되는 흐름도 |
 
 #### 관련 코드
@@ -779,7 +780,7 @@ Preview Actor 생성
 |---|---|
 | 구현 아래 | DataTable Row → Build Preview → HISM 등록 흐름도 |
 | 구현 포인트 아래 | 건축 프리뷰 생성 및 머티리얼 변경 GIF |
-| 측정 항목 아래 | 최초 로드 / 캐시 재사용 시간 비교 그래프 |
+| 측정 결과 아래 | 최초 로드 / 캐시 재사용 시간 비교 그래프 |
 
 #### 관련 코드
 
@@ -806,22 +807,22 @@ PP/Buildable/Buildable.cpp
 - 제작 UI는 무기, 장비, 건축 아이템, 음식 카테고리로 필터링합니다.
 - 퀘스트 UI는 사냥/제작 진행도를 갱신하고, 완료 시 보상을 인벤토리에 지급합니다.
 
-#### 측정 결과
+#### 구현 규모
 
-| 항목 | 값 | 설명 |
-|---|---|---|
-| 인벤토리 슬롯 수 | 20 | 기본 인벤토리 슬롯 |
-| 퀵슬롯 수 | 6 | 단축 슬롯 |
-| 아이템 DataTable Row 수 | 에셋 기준 확인 필요 | 코드 zip에는 DataTable 에셋이 포함되지 않아 산출 불가 |
-| 제작 가능 아이템 수 | 에셋 기준 확인 필요 | Crafting UI에 노출되는 제작 항목 수 |
-| 퀘스트 타입 수 | 3 | `Collection`, `Hunt`, `Craft` |
+| 항목 | 내용 |
+|---|---|
+| 인벤토리 슬롯 수 | 20칸 |
+| 퀵슬롯 수 | 6칸 |
+| 아이템 데이터 | `FUIItemTableInfo` DataTable 기반 |
+| 제작 카테고리 | 무기 / 장비 / 건축 아이템 / 음식 |
+| 퀘스트 타입 | `Collection` / `Hunt` / `Craft` |
 
 #### 이미지/GIF 추천 위치
 
 | 위치 | 추천 자료 |
 |---|---|
 | 구현 내용 아래 | 인벤토리, 퀵슬롯, 제작 UI 캡처 |
-| 측정 항목 아래 | 아이템 획득 → 스택 → 제작 → 퀘스트 보상 흐름 GIF |
+| 측정 결과 아래 | 아이템 획득 → 스택 → 제작 → 퀘스트 보상 흐름 GIF |
 
 #### 관련 코드
 
@@ -851,7 +852,7 @@ PP/PPGameInstance.cpp
 | 위치 | 추천 자료 |
 |---|---|
 | 구현 내용 아래 | 일반 몬스터 탐지 → 추적 → 공격 GIF |
-| 측정 항목 아래 | Morigesh Phase 전환 및 보스 스킬 사용 GIF |
+| 측정 결과 아래 | Morigesh Phase 전환 및 보스 스킬 사용 GIF |
 
 #### 관련 코드
 
@@ -902,9 +903,9 @@ PP/
 | GPU | GeForce RTX 3050 |
 | RAM | DDR4 32GB |
 | OS | 윈도우 11 |
-| Unreal Engine Version | 4.26|
+| Unreal Engine Version | 4.26 |
 | Build Type | Editor PIE - New Editor Window |
-| Resolution | 1280*720 |
+| Resolution | 1280 x 720 |
 | 측정 횟수 | 평균 3~5회 |
 
 
@@ -942,7 +943,7 @@ Actor 수와 Component 수를 줄이는 데는 유리했지만, `FBuildingNode`,
 
 ### 청크 복원 경로의 동기 로드
 
-건축 프리뷰 에셋은 `RequestAsync`로 비동기 로드하지만, SaveData에서 청크를 복원하는 `AddBuildingInstanceDefinitionName` / `SpawnAttachBuildableSaveData` 경로는 `ResolveSync`를 사용합니다.  
+건축 프리뷰 에셋은 `RequestAsync`로 비동기 로드하지만, SaveData를 기준으로 청크를 복원하는 `AddBuildingInstanceDefinitionName` / `SpawnAttachBuildableSaveData` 경로는 `ResolveSync`를 사용합니다.  
 구현은 단순하고 즉시 복원이 쉽지만, 청크 크기와 오브젝트 수가 커지면 순간적인 비용이 생길 수 있습니다.  
 추후에는 청크 복원도 비동기 에셋 준비 단계와 실제 HISM 등록 단계를 분리하는 방식으로 확장할 수 있습니다.
 
@@ -951,4 +952,4 @@ Actor 수와 Component 수를 줄이는 데는 유리했지만, `FBuildingNode`,
 <a id="one-line-summary"></a>
 ## 9. 한 줄 요약
 
-> 대규모 건축/자원 오브젝트를 HISM과 청크 스트리밍으로 관리하고, ID 기반 상태 관리와 DataTable 기반 건축·아이템·퀘스트 시스템을 결합한 Unreal Engine C++ 클라이언트 포트폴리오입니다.
+> 대량 건축물과 자원을 HISM·청크 스트리밍으로 관리하고, ID 기반 상태 관리와 DataTable 기반 콘텐츠 구조를 결합한 Unreal Engine C++ 클라이언트 포트폴리오입니다.

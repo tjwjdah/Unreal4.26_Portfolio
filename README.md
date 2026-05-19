@@ -226,7 +226,9 @@ Chunk-HISM은 단일 HISM보다 생성 시간과 Draw Calls는 늘었지만, FPS
 | 측정 결과 아래 | Actor / ISM / HISM / Chunk-HISM 비교 그래프 |
 
 #### 관련 코드
-
+<details>
+<summary>코드 파일 / 함수 목록 보기</summary>
+  
 ```text
 PP/Chunk/ChunkManager.h
 PP/Chunk/ChunkManager.cpp
@@ -235,7 +237,7 @@ PP/Chunk/ChunkActor.cpp
 PP/Tools/AInstancingBenchmark.h
 PP/Tools/AInstancingBenchmark.cpp
 ```
-
+</details>
 ---
 
 <a id="chunk-streaming"></a>
@@ -330,8 +332,8 @@ Clean은 변경 없이 이동하며 순수 청크 로드 / 언로드 비용을 �
 
 ##### 활성 오브젝트 수
 
-| 케이스 | ActiveChunks | ActiveInstances | ActiveHISMComponents  | 
-|---| ---: |---:|---:|
+| 케이스 | ActiveChunks | ActiveInstances | ActiveHISMComponents |
+|---|---:|---:|---:|
 | 전체 로드 | 49 | 2729 | 980 |
 | Radius 1, Clean | 9 | 507 | 180 |
 | Radius 1, Dirty | 9 | 516 | 180 | 
@@ -369,7 +371,9 @@ Dirty Unload 상황에서도 Runtime SaveData 캐시 반영 비용은 0.1ms대�
 | 측정 결과 아래 | 전체 로드 vs 청크 스트리밍 ActiveChunks 비교 그래프 |
 
 #### 관련 코드
-
+<details>
+<summary>코드 파일 / 함수 목록 보기</summary>
+  
 ```text
 AChunkManager::UpdateChunkStreamingAroundLocation
 AChunkManager::LoadChunkRuntime
@@ -377,7 +381,7 @@ AChunkManager::UnloadChunkRuntime
 AChunkManager::BuildWantChunkSet
 AChunkManager::BuildConnectedWantedChunkSet
 ```
-
+</details>
 ---
 
 <a id="dirty-chunk-save-load"></a>
@@ -441,6 +445,7 @@ Full Save는 전체 청크를 다시 저장 데이터로 만들고, Dirty Save�
 | Full Save | 625 | - | 625 | 287.965 | 329.165 |
 | Dirty Save - 1개 청크 | 625 | 1 | 1 | 0.975 | 93.710 |
 | Dirty Save - 5개 청크 | 625 | 5 | 5 | 3.142 | 96.147 |
+
 Dirty Save는 기존 SaveData를 로드한 뒤 변경된 청크만 다시 구성해 병합하는 방식으로 측정했습니다.
 
 Full Save는 625개 청크 전체를 다시 구성해야 해서 재구성 시간이 크게 증가했습니다. 반면 Dirty Save는 변경된 1개 또는 5개 청크만 다시 구성해, 재구성 시간이 287.965ms에서 0.975ms / 3.142ms로 줄었습니다.
@@ -457,7 +462,9 @@ Full Save는 625개 청크 전체를 다시 구성해야 해서 재구성 시간
 | 측정 결과 아래 | Full Save / Dirty Save 저장 시간 비교 그래프 |
 
 #### 관련 코드
-
+<details>
+<summary>코드 파일 / 함수 목록 보기</summary>
+  
 ```text
 PP/Chunk/ChunkSaveGame.h
 AChunkManager::SaveWorld
@@ -467,7 +474,7 @@ AChunkManager::LoadWorld
 AChunkManager::BuildChunkSaveData
 AChunkManager::FlushDirtyChunksSaveCache
 ```
-
+</details>
 ---
 
 <a id="socket-building-state"></a>
@@ -596,7 +603,9 @@ Anchor가 없으면 해당 연결 Component의 건축물들을 함께 제거
 | `HISM ↔ Actor Hybrid` 아래 | HISM 건축물과 문 Actor가 함께 저장/로드되는 흐름도 |
 
 #### 관련 코드
-
+<details>
+<summary>코드 파일 / 함수 목록 보기</summary>
+  
 ```text
 AChunkManager::AddSocket
 AChunkManager::CheckSocket
@@ -615,6 +624,7 @@ PP/Buildable/DoorBuildable.cpp
 PP/Buildable/OpenDoorBuildable.cpp
 PP/Buildable/DestructibleBuildable.cpp
 ```
+</details>
 ---
 
 <a id="data-driven-building"></a>
@@ -698,7 +708,9 @@ Preview Actor 생성
 | 측정 결과 아래 | 최초 로드 / 캐시 재사용 시간 비교 그래프 |
 
 #### 관련 코드
-
+<details>
+<summary>코드 파일 / 함수 목록 보기</summary>
+  
 ```text
 PP/GameInfo.h
 PP/AssetManager/BuildAssetSubsystem.h
@@ -708,7 +720,7 @@ PP/Buildable/BuildManagerComponent.cpp
 PP/Buildable/Buildable.h
 PP/Buildable/Buildable.cpp
 ```
-
+</details>
 ---
 
 <a id="inventory-crafting-quest"></a>
@@ -739,7 +751,9 @@ PP/Buildable/Buildable.cpp
 | 측정 결과 아래 | 아이템 획득 → 스택 → 제작 → 퀘스트 보상 흐름 GIF |
 
 #### 관련 코드
-
+<details>
+<summary>코드 파일 / 함수 목록 보기</summary>
+  
 ```text
 PP/Widget/InventoryTile.cpp
 PP/Widget/UseInventoryTile.cpp
@@ -748,7 +762,7 @@ PP/Widget/QuestWidget.cpp
 PP/GameInfo.h
 PP/PPGameInstance.cpp
 ```
-
+</details>
 ---
 
 <a id="ai-combat"></a>
@@ -757,7 +771,7 @@ PP/PPGameInstance.cpp
 #### 구현 내용
 
 - 몬스터의 순찰, 추적, 공격, 도주를 Behavior Tree Task로 분리했습니다.
-- Player Detect Service와 Decorator로 타겟 감지, 거리 조건, 보스 Phase 조건을 선택했습니다.
+- Player Detect Service와 Decorator로 타겟 감지, 거리 조건, 보스 Phase 조건을 나눠 처리했습니다.
 - 보스 Morigesh는 Phase에 따라 보호막, 좀비 소환, 폭발, 메테오, 단검 공격 패턴을 사용합니다.
 
 #### 이미지/GIF 추천 위치
@@ -768,7 +782,9 @@ PP/PPGameInstance.cpp
 | 측정 결과 아래 | Morigesh Phase 전환 및 보스 스킬 사용 GIF |
 
 #### 관련 코드
-
+<details>
+<summary>코드 파일 / 함수 목록 보기</summary>
+  
 ```text
 PP/AI/BTService_PlayerDetect.cpp
 PP/AI/BTDecorator_CheckDistance.cpp
@@ -782,7 +798,7 @@ PP/AI/UBTTask_MorigeshPhase1.cpp
 PP/AI/UBTTask_MorigeshPhase2.cpp
 PP/Character/Monster/Morigesh.cpp
 ```
-
+</details>
 ---
 
 <a id="code-structure"></a>

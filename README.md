@@ -14,7 +14,7 @@
 - [3. 시스템 구조](#system-architecture)
 - [4. 핵심 기술 상세](#core-tech)
   - [4.1 HISM 기반 청크 월드 관리](#hism-chunk-world)
-  - [4.2 & 4.3 Chunk Systems를 사용한 이유](#chunk-systems)
+  - [공통 배경: Chunk Systems를 사용한 이유](#chunk-systems)
   - [4.2 Dirty Chunk 기반 저장/로드](#dirty-chunk-save-load)
   - [4.3 플레이어 위치 기반 청크 스트리밍](#chunk-streaming)
   - [4.4 소켓 기반 건축 연결과 HISM ↔ Actor Hybrid](#socket-building-state)
@@ -242,7 +242,7 @@ PP/Tools/AInstancingBenchmark.cpp
 ---
 
 <a id="chunk-systems"></a>
-### 4.2 & 4.3 Chunk Systems를 사용한 이유
+### 공통 배경: Chunk Systems를 사용한 이유
 
 #### 문제
 
@@ -365,6 +365,14 @@ AChunkManager::FlushDirtyChunksSaveCache
 ### 4.3 플레이어 위치 기반 청크 스트리밍
 
 #### 문제
+
+Dirty Chunk 저장으로 저장 비용은 줄일 수 있었지만, 모든 청크를 계속 로드해두면 런타임 월드 비용은 그대로 남습니다.
+
+플레이어가 이동할수록 탐색 범위가 넓어지고, 건축물과 자원도 계속 누적되기 때문에 화면에 보이지 않는 지역의 HISM 인스턴스, Component, Collision 데이터까지 월드에 남게 됩니다.
+
+그래서 청크를 저장 단위뿐 아니라 로드/언로드 단위로도 사용했습니다. 플레이어 주변 청크만 유지하고, 멀어진 청크는 Runtime SaveData 캐시에 반영한 뒤 월드에서 제거하도록 구현했습니다.
+
+다만 건축물이 청크 경계를 넘어 연결될 수 있어서, 단순 거리 기준이 아니라 `SocketMap` 기준의 연결 청크도 함께 로드하도록 처리했습니다.
 
 #### 구현
 

@@ -14,8 +14,8 @@
 - [3. 시스템 구조](#system-architecture)
 - [4. 핵심 기술 상세](#core-tech)
   - [4.1 HISM 기반 청크 월드 관리](#hism-chunk-world)
-  - [4.2 플레이어 위치 기반 청크 스트리밍](#chunk-streaming)
-  - [4.3 Dirty Chunk 기반 저장/로드](#dirty-chunk-save-load)
+  - [4.2 Dirty Chunk 기반 저장/로드](#dirty-chunk-save-load)
+  - [4.3 플레이어 위치 기반 청크 스트리밍](#chunk-streaming)
   - [4.4 소켓 기반 건축 연결과 HISM ↔ Actor Hybrid](#socket-building-state)
   - [4.5 데이터 기반 건축 시스템과 에셋 로드](#data-driven-building)
   - [4.6 인벤토리 / 제작 / 퀘스트 UI](#inventory-crafting-quest)
@@ -240,8 +240,101 @@ PP/Tools/AInstancingBenchmark.cpp
 </details>
 ---
 
+<a id="dirty-chunk-save-load"></a>
+### 4.2 Dirty Chunk 기반 저장/로드
+
+#### 문제
+
+청크 좌표는 자유 배치된 건축물을 직접 찾는 용도로는 한계가 있었지만 저장/로드 단위로는 잘 맞았습니다.
+
+월드 전체를 매번 저장하면 건축물과 자원이 많아질수록 저장 대상이 계속 커지고, 플레이어가 일부 지역만 수정했더라도 전체 데이터를 다시 구성해야 합니다.
+
+그래서 청크를 **변경된 월드 데이터를 묶어서 저장하고 복원하는 단위**로 사용했습니다.
+
+#### 구현
+
+건축물 배치, 파괴, 업그레이드, 자원 채집처럼 월드 상태가 바뀌면 해당 위치의 청크만 Dirty로 표시했습니다.  
+저장 시에는 Dirty Chunk만 SaveGame 데이터에 반영합니다.
+
+```cpp
+TSet<FChunkCoords> DirtyChunks;
+TSet<FChunkCoords> GraphDirtyChunks;
+```
+
+- `DirtyChunks`: 일반적인 건축물/자원 변경
+- `GraphDirtyChunks`: 소켓 연결 변경처럼, 다음 스트리밍 계산 전에 Runtime SaveData 캐시를 먼저 최신화해야 하는 그래프 변경
+
+스트리밍 중에는 Runtime SaveData 캐시를 유지하고, 청크 언로드 또는 수동 저장 시 변경된 청크만 캐시에 반영했습니다.
+
+#### 저장 데이터 구조
+
+| 데이터 | 주요 필드 | 용도 |
+|---|---|---|
+| `FBuildingSaveData` | `ID`, `BuildDefinitionName`, `Transform`, `Durability`, `SocketMap` | 건축물 위치, 내구도, 소켓 연결 복원 |
+| `FResourceSaveData` | `ID`, `Transform`, `Hp`, `ResourceType`, `ResourceDefinitionName` | 자원 위치, 체력, 타입 복원 |
+| `FAttachBuildableSaveData` | `ParentBuildingID`, `BuildDefinitionName`, `ParentSocketName`, `Transform`, `Durability` | 문 같은 부착형 Actor 복원 |
+
+
+#### 구현 포인트
+
+- 건축물/자원 변경 시 위치 기반으로 Dirty Chunk 등록
+- 연결 관계 변경 시 Graph Dirty Chunk 등록
+- `SaveWorldFull`과 `SaveWorldDirty` 분리
+- 청크 언로드 전 Dirty 상태를 Runtime SaveData 캐시에 반영
+- 문처럼 HISM에 직접 포함되지 않는 부착형 Actor는 별도 SaveData로 저장
+
+#### 보완한 부분: 스트리밍과 저장 캐시 동기화
+
+청크를 언로드하기 전에 변경 내용을 캐시에 반영하지 않으면, 다시 로드했을 때 이전 상태로 돌아갈 수 있습니다.  
+예를 들어 파괴한 건축물이 다시 생기거나, 업그레이드 전 상태로 복원될 수 있습니다.
+
+그래서 언로드 전 Dirty Chunk를 캐시에 반영하고, 수동 저장 시에도 Dirty Chunk만 SaveGame 데이터에 갱신하도록 분리했습니다.  
+또한 연결 구조가 바뀐 경우에는 연결 정보가 포함된 청크도 함께 Dirty 처리했습니다.
+
+#### 측정 결과
+
+Dirty Save 측정은 625개 청크가 로드된 테스트 월드에서 진행했습니다.  
+Full Save는 전체 청크를 다시 저장 데이터로 만들고, Dirty Save는 변경된 청크만 다시 저장 데이터로 구성하도록 측정했습니다.
+
+| 방식 | 전체 청크 | 변경 청크 | 재구성 청크 | 재구성(ms) | 전체 저장(ms) |
+|---|---:|---:|---:|---:|---:|
+| Full Save | 625 | - | 625 | 287.965 | 329.165 |
+| Dirty Save - 1개 청크 | 625 | 1 | 1 | 0.975 | 93.710 |
+| Dirty Save - 5개 청크 | 625 | 5 | 5 | 3.142 | 96.147 |
+
+Dirty Save는 기존 SaveData를 로드한 뒤 변경된 청크만 다시 구성해 병합하는 방식으로 측정했습니다.
+
+Full Save는 625개 청크 전체를 다시 구성해야 해서 재구성 시간이 크게 증가했습니다. 반면 Dirty Save는 변경된 1개 또는 5개 청크만 다시 구성해, 재구성 시간이 287.965ms에서 0.975ms / 3.142ms로 줄었습니다.
+
+전체 저장 처리 시간도 329.165ms에서 93.710ms / 96.147ms로 줄어, 월드 규모가 커지고 일부 청크만 바뀌는 상황에서 Dirty Chunk 방식이 효과적이라고 봤습니다.
+
+#### 이미지/GIF 추천 위치
+
+| 위치 | 추천 자료 |
+|---|---|
+| 구현 아래 | 전체 저장과 Dirty Save 차이 다이어그램 |
+| 저장 데이터 구조 아래 | BuildingSaveData / ResourceSaveData 관계도 |
+| 캐시 동기화 아래 | Unload 전 Runtime SaveData 캐시에 반영되는 흐름도 |
+| 측정 결과 아래 | Full Save / Dirty Save 저장 시간 비교 그래프 |
+
+#### 관련 코드
+<details>
+<summary>코드 파일 / 함수 목록 보기</summary>
+  
+```text
+PP/Chunk/ChunkSaveGame.h
+AChunkManager::SaveWorld
+AChunkManager::SaveWorldFull
+AChunkManager::SaveWorldDirty
+AChunkManager::LoadWorld
+AChunkManager::BuildChunkSaveData
+AChunkManager::FlushDirtyChunksSaveCache
+```
+</details>
+---
+
 <a id="chunk-streaming"></a>
-### 4.2 플레이어 위치 기반 청크 스트리밍
+### 4.3 플레이어 위치 기반 청크 스트리밍
 
 #### 문제
 
@@ -380,99 +473,6 @@ AChunkManager::LoadChunkRuntime
 AChunkManager::UnloadChunkRuntime
 AChunkManager::BuildWantChunkSet
 AChunkManager::BuildConnectedWantedChunkSet
-```
-</details>
----
-
-<a id="dirty-chunk-save-load"></a>
-### 4.3 Dirty Chunk 기반 저장/로드
-
-#### 문제
-
-청크 좌표는 자유 배치된 건축물을 직접 찾는 용도로는 한계가 있었지만 저장/로드 단위로는 잘 맞았습니다.
-
-월드 전체를 매번 저장하면 건축물과 자원이 많아질수록 저장 대상이 계속 커지고, 플레이어가 일부 지역만 수정했더라도 전체 데이터를 다시 구성해야 합니다.
-
-그래서 청크를 **변경된 월드 데이터를 묶어서 저장하고 복원하는 단위**로 사용했습니다.
-
-#### 구현
-
-건축물 배치, 파괴, 업그레이드, 자원 채집처럼 월드 상태가 바뀌면 해당 위치의 청크만 Dirty로 표시했습니다.  
-저장 시에는 Dirty Chunk만 SaveGame 데이터에 반영합니다.
-
-```cpp
-TSet<FChunkCoords> DirtyChunks;
-TSet<FChunkCoords> GraphDirtyChunks;
-```
-
-- `DirtyChunks`: 일반적인 건축물/자원 변경
-- `GraphDirtyChunks`: 소켓 연결 변경처럼, 다음 스트리밍 계산 전에 Runtime SaveData 캐시를 먼저 최신화해야 하는 그래프 변경
-
-스트리밍 중에는 Runtime SaveData 캐시를 유지하고, 청크 언로드 또는 수동 저장 시 변경된 청크만 캐시에 반영했습니다.
-
-#### 저장 데이터 구조
-
-| 데이터 | 주요 필드 | 용도 |
-|---|---|---|
-| `FBuildingSaveData` | `ID`, `BuildDefinitionName`, `Transform`, `Durability`, `SocketMap` | 건축물 위치, 내구도, 소켓 연결 복원 |
-| `FResourceSaveData` | `ID`, `Transform`, `Hp`, `ResourceType`, `ResourceDefinitionName` | 자원 위치, 체력, 타입 복원 |
-| `FAttachBuildableSaveData` | `ParentBuildingID`, `BuildDefinitionName`, `ParentSocketName`, `Transform`, `Durability` | 문 같은 부착형 Actor 복원 |
-
-
-#### 구현 포인트
-
-- 건축물/자원 변경 시 위치 기반으로 Dirty Chunk 등록
-- 연결 관계 변경 시 Graph Dirty Chunk 등록
-- `SaveWorldFull`과 `SaveWorldDirty` 분리
-- 청크 언로드 전 Dirty 상태를 Runtime SaveData 캐시에 반영
-- 문처럼 HISM에 직접 포함되지 않는 부착형 Actor는 별도 SaveData로 저장
-
-#### 보완한 부분: 스트리밍과 저장 캐시 동기화
-
-청크를 언로드하기 전에 변경 내용을 캐시에 반영하지 않으면, 다시 로드했을 때 이전 상태로 돌아갈 수 있습니다.  
-예를 들어 파괴한 건축물이 다시 생기거나, 업그레이드 전 상태로 복원될 수 있습니다.
-
-그래서 언로드 전 Dirty Chunk를 캐시에 반영하고, 수동 저장 시에도 Dirty Chunk만 SaveGame 데이터에 갱신하도록 분리했습니다.  
-또한 연결 구조가 바뀐 경우에는 연결 정보가 포함된 청크도 함께 Dirty 처리했습니다.
-
-#### 측정 결과
-
-Dirty Save 측정은 625개 청크가 로드된 테스트 월드에서 진행했습니다.  
-Full Save는 전체 청크를 다시 저장 데이터로 만들고, Dirty Save는 변경된 청크만 다시 저장 데이터로 구성하도록 측정했습니다.
-
-| 방식 | 전체 청크 | 변경 청크 | 재구성 청크 | 재구성(ms) | 전체 저장(ms) |
-|---|---:|---:|---:|---:|---:|
-| Full Save | 625 | - | 625 | 287.965 | 329.165 |
-| Dirty Save - 1개 청크 | 625 | 1 | 1 | 0.975 | 93.710 |
-| Dirty Save - 5개 청크 | 625 | 5 | 5 | 3.142 | 96.147 |
-
-Dirty Save는 기존 SaveData를 로드한 뒤 변경된 청크만 다시 구성해 병합하는 방식으로 측정했습니다.
-
-Full Save는 625개 청크 전체를 다시 구성해야 해서 재구성 시간이 크게 증가했습니다. 반면 Dirty Save는 변경된 1개 또는 5개 청크만 다시 구성해, 재구성 시간이 287.965ms에서 0.975ms / 3.142ms로 줄었습니다.
-
-전체 저장 처리 시간도 329.165ms에서 93.710ms / 96.147ms로 줄어, 월드 규모가 커지고 일부 청크만 바뀌는 상황에서 Dirty Chunk 방식이 효과적이라고 봤습니다.
-
-#### 이미지/GIF 추천 위치
-
-| 위치 | 추천 자료 |
-|---|---|
-| 구현 아래 | 전체 저장과 Dirty Save 차이 다이어그램 |
-| 저장 데이터 구조 아래 | BuildingSaveData / ResourceSaveData 관계도 |
-| 캐시 동기화 아래 | Unload 전 Runtime SaveData 캐시에 반영되는 흐름도 |
-| 측정 결과 아래 | Full Save / Dirty Save 저장 시간 비교 그래프 |
-
-#### 관련 코드
-<details>
-<summary>코드 파일 / 함수 목록 보기</summary>
-  
-```text
-PP/Chunk/ChunkSaveGame.h
-AChunkManager::SaveWorld
-AChunkManager::SaveWorldFull
-AChunkManager::SaveWorldDirty
-AChunkManager::LoadWorld
-AChunkManager::BuildChunkSaveData
-AChunkManager::FlushDirtyChunksSaveCache
 ```
 </details>
 ---

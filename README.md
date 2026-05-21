@@ -14,7 +14,7 @@
 - [3. 시스템 구조](#system-architecture)
 - [4. 핵심 기술 상세](#core-tech)
   - [4.1 HISM 기반 청크 월드 관리](#hism-chunk-world)
-  - [공통 배경: Chunk Systems를 사용한 이유](#chunk-systems)
+  - [공통 배경: Chunk System를 사용한 이유](#chunk-systems)
   - [4.2 Dirty Chunk 기반 저장/로드](#dirty-chunk-save-load)
   - [4.3 플레이어 위치 기반 청크 스트리밍](#chunk-streaming)
   - [4.4 소켓 기반 건축 연결과 HISM ↔ Actor Hybrid](#socket-building-state)
@@ -197,10 +197,11 @@ PP/Tools/AInstancingBenchmark.h
 PP/Tools/AInstancingBenchmark.cpp
 ```
 </details>
+
 ---
 
 <a id="chunk-systems"></a>
-### 공통 배경: Chunk Systems를 사용한 이유
+### 공통 배경: Chunk System를 사용한 이유
 
 #### 문제
 
@@ -260,11 +261,10 @@ Dirty Chunk는 일반 변경과 연결 그래프 변경을 나눠 처리했습�
 
 #### 구현 포인트
 
-- 건축물/자원 변경 시 위치 기반으로 Dirty Chunk 등록
-- 연결 관계 변경 시 Graph Dirty Chunk 등록
-- `SaveWorldFull`과 `SaveWorldDirty` 분리
-- 청크 언로드 전 Dirty 상태를 Runtime SaveData 캐시에 반영
-- 문처럼 HISM에 직접 포함되지 않는 부착형 Actor는 별도 SaveData로 저장
+- 건축물/자원 변경은 해당 위치의 청크만 Dirty로 표시했습니다.
+- 일반 변경과 소켓 연결 변경을 나눠, 연결 그래프 변경은 스트리밍 계산 전에 캐시에 먼저 반영했습니다.
+- Full Save와 Dirty Save 경로를 분리하고, Dirty Save는 변경된 청크만 기존 SaveData에 병합했습니다.
+- 문 같은 부착형 Actor는 부모 건축물과 소켓 정보를 담은 별도 SaveData로 저장했습니다.
 
 #### 보완한 부분: 스트리밍과 저장 캐시 동기화
 
@@ -314,6 +314,7 @@ AChunkManager::BuildChunkSaveData
 AChunkManager::FlushDirtyChunksSaveCache
 ```
 </details>
+
 ---
 
 <a id="chunk-streaming"></a>
@@ -336,12 +337,10 @@ Dirty Chunk 저장으로 저장 비용은 줄일 수 있었지만, 모든 청크
 
 #### 구현 포인트
 
-- `StreamingRadius` 기준으로 로드 대상 청크를 계산합니다.
-- 현재 로드된 청크와 비교해 Load / Unload 목록을 나눕니다.
-- 언로드 전 변경된 청크는 Runtime SaveData 캐시에 반영합니다.
-- 범위 밖 청크의 HISM 인스턴스와 Collision 데이터를 실제 월드에서 제거합니다.
-- 청크 경계에 걸친 건축물을 위해 연결된 청크도 추가 로드합니다.
-- 연결 그래프가 바뀐 청크는 스트리밍 계산 전에 Runtime SaveData 캐시에 먼저 반영합니다.
+- 플레이어 위치와 `StreamingRadius`를 기준으로 로드 대상 청크를 계산하고, 현재 로드된 청크와 비교해 Load / Unload 대상을 나눴습니다.
+- 언로드 대상 청크는 변경 내용을 Runtime SaveData 캐시에 반영한 뒤, HISM 인스턴스와 Collision 데이터를 월드에서 제거했습니다.
+- 다시 가까워진 청크는 SaveData를 기준으로 HISM 인스턴스를 재생성했습니다.
+- 청크 경계에 걸친 건축물은 `SocketMap` 기반 BFS로 연결 청크를 찾아 추가 로드했습니다.
 
 #### 보완한 부분: 경계 연결 처리
 
@@ -436,6 +435,7 @@ AChunkManager::BuildWantChunkSet
 AChunkManager::BuildConnectedWantedChunkSet
 ```
 </details>
+
 ---
 
 <a id="socket-building-state"></a>
@@ -503,12 +503,10 @@ Preview Transform을 소켓 기준으로 보정
 
 #### 구현 포인트
 
-- 배치 가능한 대상 타입과 소켓을 제한했습니다.
-- 가장 가까운 유효 소켓을 찾아 프리뷰 위치와 회전을 보정했습니다.
-- 이미 사용 중인 소켓은 다시 사용할 수 없도록 막았습니다.
-- 배치 완료 시 양쪽 건축물의 연결 정보를 서로 갱신했습니다.
-- 정적 건축물은 HISM 인스턴스로 등록하고, 문 같은 부착형 오브젝트는 Actor로 유지했습니다.
-- 소켓 연결 정보는 저장/로드, 청크 경계 로드, 파괴 후 지지 구조 판정에도 사용했습니다.
+- 배치 가능한 대상 타입과 소켓을 제한하고, 가장 가까운 유효 소켓을 기준으로 프리뷰 위치와 회전을 보정했습니다.
+- 이미 사용 중인 소켓에는 다시 배치할 수 없도록 막고, 배치 완료 시 양쪽 건축물의 연결 정보를 갱신했습니다.
+- 정적 건축물은 HISM 인스턴스로 등록하고, 문 같은 부착형 오브젝트는 부모 건축물 ID와 소켓 이름을 기준으로 Actor로 유지했습니다.
+- 소켓 연결 정보는 저장/로드, 청크 경계 로드, 파괴 후 지지 구조 판정에 재사용했습니다.
 
 #### 보완한 부분: 충돌 검사에서 연결 그래프 기반 지지 판정으로 변경
 
@@ -536,8 +534,8 @@ Anchor가 있으면 유지
 Anchor가 없으면 해당 연결 그룹을 함께 제거
 ```
 
-이 방식은 매번 주변 충돌 검사를 반복하지 않고, 실제 배치 과정에서 확정된 연결 정보만 사용한다는 장점이 있습니다.
-그래서 가까이 있지만 연결되지 않은 건축물이 잘못 포함되는 문제를 줄이고, 대량 파괴 상황도 연결 그래프 단위로 처리할 수 있습니다.
+이 방식은 주변 충돌 검사를 반복하지 않고, 배치 과정에서 확정된 연결 정보만 사용합니다.  
+그래서 가까이 있지만 실제로 연결되지 않은 건축물이 잘못 포함되는 문제를 줄이고, 대량 파괴 상황도 연결 그래프 단위로 처리할 수 있습니다.
 
 #### 추천 이미지/GIF 위치
 
@@ -572,6 +570,7 @@ PP/Buildable/OpenDoorBuildable.cpp
 PP/Buildable/DestructibleBuildable.cpp
 ```
 </details>
+
 ---
 
 <a id="data-driven-building"></a>
@@ -648,6 +647,7 @@ PP/Buildable/Buildable.h
 PP/Buildable/Buildable.cpp
 ```
 </details>
+
 ---
 
 <a id="inventory-crafting-quest"></a>
@@ -690,6 +690,7 @@ PP/GameInfo.h
 PP/PPGameInstance.cpp
 ```
 </details>
+
 ---
 
 <a id="ai-combat"></a>
@@ -726,6 +727,7 @@ PP/AI/UBTTask_MorigeshPhase2.cpp
 PP/Character/Monster/Morigesh.cpp
 ```
 </details>
+
 ---
 
 <a id="code-structure"></a>
@@ -789,6 +791,7 @@ HISM으로 건축물과 자원을 관리하면서 Actor / Component 수는 줄�
 현재 프로젝트에서는 상호작용 오브젝트가 문 중심이라 Actor 수 증가가 크지 않았고, 구현도 더 안정적이었습니다.
 
 다만 보관함, 제작대, 화로, 함정처럼 상태를 가진 상호작용 오브젝트가 많아지면 Actor 수와 별도 저장 데이터가 함께 늘어날 수 있습니다.
+
 추후에는 평상시에는 HISM으로 두고, 상호작용 시점에만 Actor로 전환하는 구조로 확장할 수 있습니다.
 
 ### 청크 복원 경로의 동기 로드
@@ -796,6 +799,7 @@ HISM으로 건축물과 자원을 관리하면서 Actor / Component 수는 줄�
 건축 프리뷰 에셋은 `RequestAsync`로 비동기 로드하지만, SaveData를 기준으로 청크를 복원하는 `AddBuildingInstanceDefinitionName` / `SpawnAttachBuildableSaveData` 경로는 `ResolveSync`를 사용했습니다.
 
 이 방식은 구현이 단순하고 즉시 복원이 쉽지만, 청크 크기와 오브젝트 수가 커지면 순간적인 비용이 생길 수 있습니다.
+
 추후에는 청크 복원도 비동기 에셋 준비 단계와 실제 HISM 등록 단계를 분리하는 방식으로 확장할 수 있습니다.
 
 ---

@@ -158,8 +158,18 @@ ChunkActor에서 ObjectID 역조회
     ↓
 BuildingMap / ResourceMap 접근
     ↓
-Damage / Upgrade / Destroy / Harvest / Save 처리
+Damage / Destroy / Upgrade / Harvest / Save 처리
 ```
+
+
+| Damage & Destroy | Upgrade |
+|---|---|
+| <img width="426" height="240" alt="데미지,파괴" src="https://github.com/user-attachments/assets/84ac4cd4-f43d-4a91-bbdd-f90f47d15329" /> | <img width="426" height="240" alt="업그레이드" src="https://github.com/user-attachments/assets/e8de317a-56fc-4e33-a4a9-978cc3081c9e" /> |
+
+ Harvest | Save & load |
+|---|---|
+| <img width="426" height="240" alt="벌목" src="https://github.com/user-attachments/assets/2541dfe7-5516-4319-a95e-1f4f6d833764" /> | <img width="426" height="240" alt="세이브로드" src="https://github.com/user-attachments/assets/2f9b1de5-a790-43a8-95be-a57bd60ee68c" /> |
+
 
 #### 측정 결과
 
@@ -176,13 +186,6 @@ Actor 방식은 Spawn 비용과 Draw Calls가 가장 높았고, ISM/HISM은 인�
 Chunk-HISM은 단일 HISM보다 생성 시간과 Draw Calls는 늘었지만, FPS/GPU 시간은 거의 같은 수준을 유지했습니다. 
 이 프로젝트에서는 순수 렌더링보다 청크 로드/언로드, ID 매핑, 소켓 연결 상태 관리가 더 중요했기 때문에 Chunk-HISM 구조를 선택했습니다.
 
-#### 이미지/GIF 추천 위치
-
-| 위치 | 추천 자료 |
-|---|---|
-| HISM 선택 이유 아래 | Actor / ISM / HISM 구조 비교 이미지 |
-| ID 기반 상태 관리 아래 | LineTrace → InstanceIndex → ObjectID 역조회 흐름도 |
-| 측정 결과 아래 | Actor / ISM / HISM / Chunk-HISM 비교 그래프 |
 
 #### 관련 코드
 <details>
@@ -258,7 +261,6 @@ Dirty Chunk는 일반 변경과 연결 그래프 변경을 나눠 처리했습�
 | `FResourceSaveData` | `ID`, `Transform`, `Hp`, `ResourceType`, `ResourceDefinitionName` | 자원 위치, 체력, 타입 복원 |
 | `FAttachBuildableSaveData` | `ParentBuildingID`, `BuildDefinitionName`, `ParentSocketName`, `Transform`, `Durability` | 문 같은 부착형 Actor 복원 |
 
-
 #### 구현 포인트
 
 - 건축물/자원 변경은 해당 위치의 청크만 Dirty로 표시했습니다.
@@ -273,6 +275,13 @@ Dirty Chunk는 일반 변경과 연결 그래프 변경을 나눠 처리했습�
 
 그래서 언로드 전 Dirty Chunk를 캐시에 반영하고, 수동 저장 시에도 Dirty Chunk만 SaveGame 데이터에 갱신하도록 분리했습니다.  
 또한 연결 구조가 바뀐 경우에는 연결 정보가 포함된 청크도 함께 Dirty 처리했습니다.
+
+
+| 청크 저장 캐시 동기화 | 
+|---|
+| <img width="426" height="240" alt="스트리밍과 저장 캐시 동기화" src="https://github.com/user-attachments/assets/b564c8e0-fba1-4373-8554-884be7dec875" /> |
+
+건축물의 내구도를 감소시키고 업그레이드한 뒤 청크를 언로드/재로드해도, 이전 상태로 되돌아가지 않고 변경된 상태가 그대로 복원되는 것을 확인할 수 있습니다
 
 #### 측정 결과
 
@@ -291,21 +300,13 @@ Full Save는 625개 청크 전체를 다시 구성해야 해서 재구성 시간
 
 전체 저장 처리 시간도 329.165ms에서 93.710ms / 96.147ms로 줄어, 월드 규모가 커지고 일부 청크만 바뀌는 상황에서 Dirty Chunk 방식이 효과적이라고 봤습니다.
 
-#### 이미지/GIF 추천 위치
-
-| 위치 | 추천 자료 |
-|---|---|
-| 구현 아래 | 전체 저장과 Dirty Save 차이 다이어그램 |
-| 저장 데이터 구조 아래 | BuildingSaveData / ResourceSaveData 관계도 |
-| 캐시 동기화 아래 | Unload 전 Runtime SaveData 캐시에 반영되는 흐름도 |
-| 측정 결과 아래 | Full Save / Dirty Save 저장 시간 비교 그래프 |
-
 #### 관련 코드
 <details>
 <summary>코드 파일 / 함수 목록 보기</summary>
   
 ```text
-PP/Chunk/ChunkSaveGame.h
+PP/Chunk/ChunkSaveGame.h<img width="320" height="240" alt="청크연결" src="https://github.com/user-attachments/assets/da13c1f7-e9d7-437c-aeb5-102beef14452" />
+
 AChunkManager::SaveWorld
 AChunkManager::SaveWorldFull
 AChunkManager::SaveWorldDirty
@@ -334,6 +335,12 @@ Dirty Chunk 저장으로 저장 비용은 줄일 수 있었지만, 모든 청크
 
 플레이어 위치를 기준으로 중심 청크를 계산하고, 반경 안의 청크만 로드했습니다.  
 멀어진 청크는 Runtime SaveData 캐시에 반영한 뒤 월드에서 제거하고, 다시 가까워지면 SaveData를 기준으로 HISM 인스턴스를 재생성합니다.
+
+
+| 청크 스트리밍 | 
+|---|
+| <img width="426" height="240" alt="청크" src="https://github.com/user-attachments/assets/98270788-6568-4597-8068-92366926184e" /> |
+
 
 #### 구현 포인트
 
@@ -366,6 +373,12 @@ BFS 완료 후 최종 로드 대상 기준으로 Load / Unload 수행
 ```
 
 이렇게 해서 연결된 건축물이 여러 청크에 걸쳐 있어도 필요한 청크를 함께 로드할 수 있었습니다. 대신 하나의 대형 구조물이 여러 청크를 가로지르면 활성 청크 수가 늘어날 수 있습니다.
+
+
+| 청크 연결 스트리밍 | 
+|---|
+| <img width="426" height="240" alt="청크연결" src="https://github.com/user-attachments/assets/57c9baf3-fb6f-4309-8bfc-8fed3e18628e" /> | 
+
 
 #### 측정 결과
 
@@ -413,15 +426,6 @@ Clean은 변경 없이 이동하며 순수 청크 로드 / 언로드 비용을 �
 Dirty Unload 상황에서도 Runtime SaveData 캐시 반영 비용은 0.1ms대로 유지되어, 언로드 전 캐시 갱신 비용은 크지 않다고 봤습니다.
 
 연결 청크 로드는 기본 반경 밖의 청크를 일부 더 로드하지만, 소켓 연결과 지지 구조를 유지하기 위해 감수할 만한 비용이라고 봤습니다.
-
-#### 이미지/GIF 추천 위치
-
-| 위치 | 추천 자료 |
-|---|---|
-| 설계 전환 아래 | 자유 배치 건축물과 청크 격자가 어긋나는 예시 |
-| 구현 아래 | 플레이어 이동에 따라 청크가 로드/언로드되는 GIF |
-| 경계 연결 처리 아래 | 기본 로드 청크와 추가 로드 청크를 색으로 구분한 다이어그램 |
-| 측정 결과 아래 | 전체 로드 vs 청크 스트리밍 ActiveChunks 비교 그래프 |
 
 #### 관련 코드
 <details>
@@ -501,6 +505,12 @@ Preview Transform을 소켓 기준으로 보정
 문 같은 부착형 Actor는 별도의 `BuildingID`를 새로 발급하지 않고, 부모 건축물 ID와 부모 소켓 이름을 기준으로 관리했습니다.  
 저장 시에는 부모 정보, Transform, 내구도를 별도 SaveData로 기록해 다시 복원할 수 있게 했습니다.
 
+
+| 소켓 기반 건축 | 
+|---|
+| <img width="426" height="240" alt="빌딩소켓건축" src="https://github.com/user-attachments/assets/a436ec00-0407-4465-b79e-5ffc5909b545" /> |
+
+
 #### 구현 포인트
 
 - 배치 가능한 대상 타입과 소켓을 제한하고, 가장 가까운 유효 소켓을 기준으로 프리뷰 위치와 회전을 보정했습니다.
@@ -537,15 +547,11 @@ Anchor가 없으면 해당 연결 그룹을 함께 제거
 이 방식은 주변 충돌 검사를 반복하지 않고, 배치 과정에서 확정된 연결 정보만 사용합니다.  
 그래서 가까이 있지만 실제로 연결되지 않은 건축물이 잘못 포함되는 문제를 줄이고, 대량 파괴 상황도 연결 그래프 단위로 처리할 수 있습니다.
 
-#### 추천 이미지/GIF 위치
+| 기반 파괴 | 
+|---|
+| <img width="426" height="240" alt="기반" src="https://github.com/user-attachments/assets/af1538dd-7a3a-4296-8dd2-c5754a8f5a10" /> |
 
-| 위치 | 추천 자료 |
-|---|---|
-| `문제` 아래 | 자유 배치와 소켓 스냅의 차이를 보여주는 다이어그램 |
-| `구현` 아래 | 프리뷰가 가장 가까운 소켓에 스냅되는 GIF |
-| `구현 포인트` 아래 | SocketMap으로 중복 배치를 막는 다이어그램 |
-| `보완한 부분` 아래 | Anchor 기준 BFS 탐색 후 공중 구조물이 제거되는 GIF |
-| `HISM ↔ Actor Hybrid` 아래 | HISM 건축물과 문 Actor가 함께 저장/로드되는 흐름도 |
+
 
 #### 관련 코드
 <details>
@@ -625,14 +631,6 @@ Preview Actor 생성
 정적 건축물은 Chunk HISM Instance로 등록
 ```
 
-#### 이미지/GIF 추천 위치
-
-| 위치 | 추천 자료 |
-|---|---|
-| 구현 아래 | DataTable Row → Build Preview → HISM 등록 흐름도 |
-| 구현 포인트 아래 | 건축 프리뷰 생성 및 머티리얼 변경 GIF |
-| 측정 결과 아래 | 최초 로드 / 캐시 재사용 시간 비교 그래프 |
-
 #### 관련 코드
 <details>
 <summary>코드 파일 / 함수 목록 보기</summary>
@@ -670,12 +668,11 @@ PP/Buildable/Buildable.cpp
 | 제작 카테고리 | 무기 / 장비 / 건축 아이템 / 음식 |
 | 퀘스트 타입 | `Collection` / `Hunt` / `Craft` |
 
-#### 이미지/GIF 추천 위치
 
-| 위치 | 추천 자료 |
+| 인벤토리 UI | 퀘스트 UI |
 |---|---|
-| 구현 내용 아래 | 인벤토리, 퀵슬롯, 제작 UI 캡처 |
-| 측정 결과 아래 | 아이템 획득 → 스택 → 제작 → 퀘스트 보상 흐름 GIF |
+| <img width="426" height="240" alt="퀘스트" src="https://github.com/user-attachments/assets/e03f1a96-93ed-4878-8b33-00cbbf2a7b78" /> | <img width="426" height="240" alt="아이템창" src="https://github.com/user-attachments/assets/687c31ac-492b-47cd-bcc8-30136e0416c9" /> |
+
 
 #### 관련 코드
 <details>
@@ -701,6 +698,12 @@ PP/PPGameInstance.cpp
 - 몬스터의 순찰, 추적, 공격, 도주를 Behavior Tree Task로 분리했습니다.
 - Player Detect Service와 Decorator로 타겟 감지, 거리 조건, 보스 Phase 조건을 나눠 처리했습니다.
 - 보스 Morigesh는 Phase에 따라 보호막, 좀비 소환, 폭발, 메테오, 단검 공격 패턴을 사용합니다.
+
+
+| 몬스터 탐지 및 추척, 공격 | 
+|---|
+| <img width="426" height="240" alt="몬스터전투" src="https://github.com/user-attachments/assets/4c9936b2-7f39-4fd4-9565-437167384a42" /> |
+
 
 #### 이미지/GIF 추천 위치
 

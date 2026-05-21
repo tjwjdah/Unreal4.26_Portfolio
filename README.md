@@ -136,60 +136,18 @@ flowchart TD
 
 `AChunkManager`는 전체 청크와 런타임 상태를 관리하고, `AChunkActor`는 청크 내부 HISM 인스턴스를 관리합니다.
 
-- `AChunkManager`
-  - 청크 로드/언로드
-  - 건축물/자원 ID 발급
-  - `BuildingMap`, `ResourceMap` 관리
-  - 저장/로드 및 Dirty Chunk 처리
-
-- `AChunkActor`
-  - 청크 내부에서 Mesh/오브젝트 타입별 HISM Component 생성/재사용
-  - HISM `InstanceIndex`와 ObjectID 매핑
-  - HISM Hit 결과로 ID 역조회
-
-```cpp
-TMap<FChunkCoords, AChunkActor*> LoadChunks;
-TMap<int32, FBuildingNode> BuildingMap;
-TMap<int32, FResourceNode> ResourceMap;
-```
+- `AChunkManager`: 청크 로드/언로드, 건축물/자원 ID 발급, `BuildingMap`, `ResourceMap` 관리, 저장/로드 및 Dirty Chunk 처리
+- `AChunkActor`: 청크 내부 HISM Component 관리, `InstanceIndex ↔ ObjectID` 매핑, Hit 결과 역조회
 
 #### ID 기반 상태 관리
 
-HISM 인스턴스는 Actor가 아니기 때문에 아래 정보를 직접 가질 수 없습니다.
+HISM 인스턴스 자체에는 상태를 저장할 수 없기 때문에, 건축물과 자원에 고유 ID를 발급하고 실제 상태는 `BuildingMap`, `ResourceMap`에서 관리했습니다.
 
-- 고유 ID
-- 내구도 / 최대 내구도
-- 소켓 점유 상태
-- 연결된 건축물 목록
-- 파괴 / 업그레이드 상태
-- 저장/로드 데이터
-
-그래서 건축물과 자원에 각각 고유 ID를 부여하고, 실제 상태는 `BuildingMap`, `ResourceMap`에서 관리했습니다.
-
-```text
-BuildingID
- ├─ OwnerChunk
- ├─ InstanceIndex
- ├─ StaticMesh
- ├─ Durability
- ├─ MaxDurability
- ├─ BuildDefinitionName
- ├─ MaterialType / BuildType
- ├─ SocketMap
- ├─ ConnectedBuildingIDs
- └─ IsAnchor
-
-ResourceID
- ├─ OwnerChunk
- ├─ InstanceIndex
- ├─ StaticMesh
- ├─ Hp
- ├─ ResourceType
- └─ ResourceDefinitionName
-```
+- `BuildingMap`: 내구도, 최대 내구도, 건축물 정의 이름, 소켓 연결, 연결된 건축물 ID, Anchor 여부를 관리합니다.
+- `ResourceMap`: 체력, 자원 타입, 자원 정의 이름을 관리합니다.
 
 건축물은 소켓 연결, 업그레이드, 파괴, 지지 구조 판정이 필요해서 `SocketMap`, `ConnectedBuildingIDs`, `IsAnchor`를 추가로 관리했습니다.  
-자원은 채집/파괴에 필요한 체력, 자원 타입, 정의 이름 위주로 관리했습니다.
+자원은 채집/파괴에 필요한 체력과 자원 타입 위주로 관리했습니다.
 
 ```text
 LineTrace Hit
@@ -284,13 +242,10 @@ PP/Tools/AInstancingBenchmark.cpp
 건축물 배치, 파괴, 업그레이드, 자원 채집처럼 월드 상태가 바뀌면 해당 위치의 청크만 Dirty로 표시했습니다.  
 저장 시에는 Dirty Chunk만 SaveGame 데이터에 반영합니다.
 
-```cpp
-TSet<FChunkCoords> DirtyChunks;
-TSet<FChunkCoords> GraphDirtyChunks;
-```
+Dirty Chunk는 일반 변경과 연결 그래프 변경을 나눠 처리했습니다.
 
-- `DirtyChunks`: 일반적인 건축물/자원 변경
-- `GraphDirtyChunks`: 소켓 연결 변경처럼, 다음 스트리밍 계산 전에 Runtime SaveData 캐시를 먼저 최신화해야 하는 그래프 변경
+- `DirtyChunks`: 건축물 배치, 파괴, 업그레이드, 자원 채집처럼 일반적인 월드 상태 변경
+- `GraphDirtyChunks`: 소켓 연결 변경처럼, 다음 스트리밍 계산 전에 Runtime SaveData 캐시를 먼저 최신화해야 하는 변경
 
 스트리밍 중에는 Runtime SaveData 캐시를 유지하고, 청크 언로드 또는 수동 저장 시 변경된 청크만 캐시에 반영했습니다.
 
@@ -379,12 +334,6 @@ Dirty Chunk 저장으로 저장 비용은 줄일 수 있었지만, 모든 청크
 플레이어 위치를 기준으로 중심 청크를 계산하고, 반경 안의 청크만 로드했습니다.  
 멀어진 청크는 Runtime SaveData 캐시에 반영한 뒤 월드에서 제거하고, 다시 가까워지면 SaveData를 기준으로 HISM 인스턴스를 재생성합니다.
 
-```cpp
-FChunkCoords CenterCoords = GetChunkCoordsLocation(Location);
-TSet<FChunkCoords> WantChunks = BuildWantChunkSet(CenterCoords);
-TSet<FChunkCoords> FinalWantChunks = BuildConnectedWantedChunkSet(WantChunks);
-```
-
 #### 구현 포인트
 
 - `StreamingRadius` 기준으로 로드 대상 청크를 계산합니다.
@@ -402,21 +351,19 @@ TSet<FChunkCoords> FinalWantChunks = BuildConnectedWantedChunkSet(WantChunks);
 이를 줄이기 위해 먼저 플레이어 주변 청크를 기본 로드 대상으로 잡은 뒤 Runtime SaveData의 `SocketMap`을 기준으로 연결된 건축물 ID를 BFS로 순회하고, 연결된 건축물이 다른 청크에 있으면 그 청크도 최종 로드 대상에 추가했습니다.
 
 ```text
-Player Location → CenterCoords 계산
+플레이어 위치 기준 기본 청크 계산
     ↓
-BuildWantChunkSet으로 기본 반경 청크 수집
+기본 로드 청크 수집
     ↓
-기본 청크들을 Queue에 추가
+기본 청크를 BFS 시작점으로 추가
     ↓
-Runtime SaveData에서 CurrentChunk의 Building SaveData 조회
+Runtime SaveData 캐시의 소켓 연결 정보 확인
     ↓
-Building.SocketMap의 연결 BuildingID 확인
+연결된 건축물이 다른 청크에 있으면 추가 로드 대상에 포함
     ↓
-ChunkBuildingDataIndexCoords에서 연결 BuildingID의 청크 좌표 조회
+새로 추가된 청크도 BFS 탐색 대상에 추가
     ↓
-아직 로드 대상이 아니라면 FinalWantedChunks에 추가 후 Queue에 Enqueue
-    ↓
-FinalWantedChunks 기준으로 Load / Unload 수행
+BFS 완료 후 최종 로드 대상 기준으로 Load / Unload 수행
 ```
 
 이렇게 해서 연결된 건축물이 여러 청크에 걸쳐 있어도 필요한 청크를 함께 로드할 수 있었습니다. 대신 하나의 대형 구조물이 여러 청크를 가로지르면 활성 청크 수가 늘어날 수 있습니다.
@@ -509,8 +456,8 @@ AChunkManager::BuildConnectedWantedChunkSet
 벽, 바닥, 천장, 창문, 계단처럼 배치 후 거의 움직이지 않는 건축물은 HISM으로 관리했습니다. 
 반면 문처럼 열림/닫힘, 애니메이션, 충돌 변경이 필요한 오브젝트는 HISM만으로 처리하기 어려워 Actor로 유지했습니다.
 
-정적 HISM 건축물은 `BuildingID` 기준으로 관리하고, 문 같은 부착형 Actor는 `ParentBuildingID + ParentSocketName`을 키로 `HISMAttachBuildActors`에 등록했습니다. 
-덕분에 정적 건축물의 소켓 연결/내구도/파괴/업그레이드는 `BuildingMap` 흐름을 사용하고, 부착형 Actor는 부모 소켓에 붙은 별도 SaveData로 복원할 수 있었습니다.
+정적 HISM 건축물은 `BuildingID` 기준으로 관리하고, 문 같은 부착형 Actor는 부모 `BuildingID`와 부모 소켓 이름을 기준으로 관리했습니다.
+정적 건축물의 소켓 연결, 내구도, 파괴, 업그레이드는 `BuildingMap` 기반으로 처리하고, 부착형 Actor는 부모 건축물과 소켓 정보를 담은 별도 SaveData로 복원했습니다.
 
 #### 검토한 방식
 
@@ -524,14 +471,14 @@ AChunkManager::BuildConnectedWantedChunkSet
 #### 구현
 
 건축물 연결은 Static Mesh Socket을 사용했습니다.
-배치 시 가장 가까운 유효 소켓을 찾아 프리뷰 위치와 회전을 보정하고, 배치 완료 후 SocketMap과 ConnectedBuildingIDs를 갱신했습니다.
+배치 시 가장 가까운 유효 소켓을 찾아 프리뷰 위치와 회전을 보정하고, 배치 완료 후 양쪽 건축물의 연결 정보를 갱신했습니다.
 
 ```text
 Build Preview
     ↓
 라인트레이스로 연결 대상 건축물 탐색
     ↓
-AllowedTargetTypes / AllowedTargetSockets로 프리뷰 소켓 필터링
+배치 가능한 타입 / 소켓인지 확인
     ↓
 가장 가까운 유효 소켓 찾기
     ↓
@@ -541,66 +488,52 @@ Preview Transform을 소켓 기준으로 보정
     ↓
 배치 확정
     ↓
-정적 건축물: HISM Instance 등록
-부착형 상호작용 오브젝트: Actor 유지
+정적 건축물은 HISM Instance로 등록
+문 같은 부착형 오브젝트는 Actor로 유지
     ↓
-SocketMap / ConnectedBuildingIDs 또는 HISMAttachBuildActors 갱신
+소켓 점유 정보와 연결된 건축물 목록 갱신
 ```
 
-```cpp
-bool AChunkManager::AddSocket(
-    int32 ID,
-    int32 ConnectID,
-    FName SocketName,
-    FName ConnectSocketName
-);
+정적 건축물끼리는 `SocketMap`으로 소켓 점유 상태를 관리했습니다. 이미 사용 중인 소켓에는 다시 배치할 수 없도록 막아 중복 배치를 방지했습니다.
 
-TMap<FName, int32> SocketMap;
-TArray<int32> ConnectedBuildingIDs;
+`ConnectedBuildingIDs`는 소켓으로 연결된 건축물 목록입니다. 배치뿐 아니라 저장/로드, 청크 경계 로드, 파괴 후 지지 구조 판정에도 사용했습니다.
 
-struct FAttachBuildKey
-{
-    int32 ParentBuildingID;
-    FName ParentSocketName;
-};
-
-TMap<FAttachBuildKey, ABuildable*> HISMAttachBuildActors;
-```
-
-`SocketMap`은 정적 HISM 건축물끼리 연결된 소켓을 관리합니다. 이미 사용 중인 소켓에는 다시 정적 건축물이 붙지 않도록 `CheckSocket`으로 막았습니다.
-
-`ConnectedBuildingIDs`는 이 건축물이 어떤 정적 건축물과 연결되어 있는지 저장합니다. 이 정보는 배치뿐 아니라 저장/로드, 청크 경계 로드, 파괴 후 지지 구조 판정에도 사용했습니다.
-
-문 같은 부착형 Actor는 자기만의 `BuildingID`를 새로 발급하지 않고, `ParentBuildingID + ParentSocketName` 조합으로 `HISMAttachBuildActors`에 등록했습니다. 저장 시에는 `FAttachBuildableSaveData`로 부모 ID, 부모 소켓, Transform, 내구도를 따로 기록합니다.
+문 같은 부착형 Actor는 별도의 `BuildingID`를 새로 발급하지 않고, 부모 건축물 ID와 부모 소켓 이름을 기준으로 관리했습니다.  
+저장 시에는 부모 정보, Transform, 내구도를 별도 SaveData로 기록해 다시 복원할 수 있게 했습니다.
 
 #### 구현 포인트
 
-- `AllowedTargetTypes`, `AllowedTargetSockets`로 배치 가능한 대상과 소켓을 제한했습니다.
+- 배치 가능한 대상 타입과 소켓을 제한했습니다.
 - 가장 가까운 유효 소켓을 찾아 프리뷰 위치와 회전을 보정했습니다.
-- 정적 건축물의 중복 배치는 `SocketMap`, 부착형 Actor의 중복 배치는 `HISMAttachBuildActors`로 막았습니다.
-- 배치 완료 시 양쪽 건축물의 `SocketMap` / `ConnectedBuildingIDs`를 갱신했습니다.
+- 이미 사용 중인 소켓은 다시 사용할 수 없도록 막았습니다.
+- 배치 완료 시 양쪽 건축물의 연결 정보를 서로 갱신했습니다.
+- 정적 건축물은 HISM 인스턴스로 등록하고, 문 같은 부착형 오브젝트는 Actor로 유지했습니다.
 - 소켓 연결 정보는 저장/로드, 청크 경계 로드, 파괴 후 지지 구조 판정에도 사용했습니다.
 
 #### 보완한 부분: 충돌 검사에서 연결 그래프 기반 지지 판정으로 변경
 
-처음에는 건축물이 파괴될 때 주변 충돌 검사로 인접 건축물을 찾았습니다. 하지만 여러 건축물이 한 번에 무너질 때 충돌 검사가 반복되고, 가까이 있지만 실제로 연결되지 않은 건축물까지 포함될 수 있었습니다.
+처음에는 건축물이 파괴될 때 주변 충돌 검사로 인접 건축물을 찾았습니다.
+하지만 여러 건축물이 한 번에 무너질 때 충돌 검사가 반복되고, 가까이 있지만 실제로 연결되지 않은 건축물까지 포함될 수 있었습니다.
 
-그래서 배치 시점에 저장한 `ConnectedBuildingIDs`를 연결 그래프처럼 사용했습니다. 파괴 대상과 연결되어 있던 건축물들을 시작점으로 BFS를 돌고, 탐색된 연결 Component 안에 `IsAnchor`가 없으면 해당 건축물들을 함께 제거했습니다.
+그래서 배치 시점에 저장한 `ConnectedBuildingIDs`를 연결 그래프처럼 사용했습니다.  
+건축물이 파괴되면 먼저 파괴 대상과 연결되어 있던 건축물들을 시작점으로 저장하고, 파괴 대상을 연결 정보에서 제거한 뒤 각 시작점에서 BFS를 돌렸습니다.
+
+BFS로 탐색된 연결 그룹 안에 `IsAnchor`가 있으면 아직 지지 구조와 이어져 있다고 보고 유지했습니다.  
+반대로 `IsAnchor`가 없다면 지지 구조와 끊어진 그룹으로 보고, 해당 그룹의 건축물들을 함께 제거했습니다.
 
 ```text
-DestroyBuilding(ID)
+건축물 파괴
     ↓
-파괴 대상의 ConnectedBuildingIDs를 StartNodes로 저장
+파괴 대상과 연결되어 있던 건축물들을 시작점으로 저장
     ↓
-파괴 대상을 SocketMap / ConnectedBuildingIDs에서 Disconnect
+파괴 대상을 소켓 연결 정보에서 제거
     ↓
-파괴 대상 HISM Instance 제거
+각 시작점에서 연결된 건축물을 BFS로 탐색
     ↓
-각 StartNode에서 ConnectedBuildingIDs 기반 BFS 탐색
+탐색된 연결 그룹에 Anchor가 있는지 확인
     ↓
-연결 Component 내부에 IsAnchor가 있는지 확인
-    ↓
-Anchor가 없으면 해당 연결 Component의 건축물들을 함께 제거
+Anchor가 있으면 유지
+Anchor가 없으면 해당 연결 그룹을 함께 제거
 ```
 
 이 방식은 매번 주변 충돌 검사를 반복하지 않고, 실제 배치 과정에서 확정된 연결 정보만 사용한다는 장점이 있습니다.
@@ -652,31 +585,11 @@ PP/Buildable/DestructibleBuildable.cpp
 #### 구현
 
 `FBuildDefinitionInfo`를 DataTable Row로 정의해 건축물 정보를 데이터화했습니다.  
-건축물 클래스, Static Mesh, Destructible Mesh는 Soft Reference로 관리했습니다. 프리뷰 생성처럼 플레이어 입력 중 발생하는 경로는 `UBuildAssetSubsystem::RequestAsync`로 비동기 로드하고 캐싱했으며, 저장/로드 복원이나 청크 런타임 재생성처럼 즉시 데이터가 필요한 경로는 `ResolveSync`로 캐시 또는 동기 로드를 사용했습니다.
+Row에는 건축물 타입, 재질 타입, Buildable Class, Static Mesh, Destructible Mesh, 내구도, 배치 조건, Anchor 여부, 업그레이드 Row 이름을 넣었습니다.
 
-```cpp
-struct FBuildDefinitionInfo : public FTableRowBase
-{
-    EBuildType BuildType;
-    EnvironmentsType MaterialType;
+건축물 클래스와 메시/파괴 메시는 Soft Reference로 관리했습니다.  
+프리뷰 선택 경로는 `RequestAsync`로 비동기 로드하고, 저장/로드 복원이나 청크 재생성처럼 즉시 필요한 경로는 `ResolveSync`로 처리했습니다.
 
-    TSoftClassPtr<ABuildable> BuildableClass;
-    TSoftObjectPtr<UStaticMesh> StaticMesh;
-    TSoftObjectPtr<UDestructibleMesh> DestructibleMesh;
-
-    int32 Durability;
-    int32 MaxDurability;
-
-    bool GroundBuild;
-    bool GroundOnly;
-    bool Anchor;
-
-    TArray<EBuildType> AllowedTargetTypes;
-    TArray<FName> AllowedTargetSockets;
-
-    FString UpgradeName;
-};
-```
 #### 구현 포인트
 
 - 건축물 클래스와 메시를 Soft Reference로 관리했습니다.

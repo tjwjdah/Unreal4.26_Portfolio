@@ -87,7 +87,7 @@ HISM은 렌더링 최적화로만 쓰지 않고, ID 기반 상태 데이터와 �
 flowchart TD
     Player[APlayerCharacter] --> BuildManager[UBuildManagerComponent]
     BuildManager --> BuildAssetSubsystem[UBuildAssetSubsystem]
-    BuildAssetSubsystem --> BuildDataTable[FBuildDefinitionInfo DataTable]
+    BuildAssetSubsystem --> BuildDataTable[BuildDataTable DataTable]
     BuildManager --> Preview[Build Preview Actor]
     Preview --> ChunkManager[AChunkManager]
 
@@ -99,9 +99,9 @@ flowchart TD
     ChunkManager --> SaveGame
 
     Player --> Inventory[Inventory / Quick Slot UI]
-    Inventory --> ItemData[FUIItemTableInfo DataTable]
+    Inventory --> ItemData[DTItemTable DataTable]
     Player --> Quest[Quest UI]
-    Quest --> QuestData[FQuestTableInfo DataTable]
+    Quest --> QuestData[DTQuest DataTable]
     Monster[Monster / Morigesh] --> BT[Behavior Tree Tasks]
 ```
 
@@ -589,7 +589,7 @@ PP/Buildable/DestructibleBuildable.cpp
 
 #### 구현
 
-`FBuildDefinitionInfo`를 DataTable Row로 정의해 건축물 정보를 데이터화했습니다.  
+`FBuildDefinitionInfo`를 BuildDataTable Row로 정의해 건축물 정보를 데이터화했습니다.  
 Row에는 건축물 타입, 재질 타입, Buildable Class, Static Mesh, Destructible Mesh, 내구도, 배치 조건, Anchor 여부, 업그레이드 Row 이름을 넣었습니다.
 
 건축물 클래스와 메시/파괴 메시는 Soft Reference로 관리했습니다.  
@@ -605,7 +605,7 @@ Row에는 건축물 타입, 재질 타입, Buildable Class, Static Mesh, Destruc
 
 | 항목 | 적용 방식 |
 |---|---|
-| 건축물 정의 | `FBuildDefinitionInfo` DataTable |
+| 건축물 정의 | `BuildDataTable` DataTable / 'FBuildDefinitionInfo' Row 기반  |
 | 에셋 참조 | `TSoftClassPtr`, `TSoftObjectPtr` |
 | 로드 방식 | 프리뷰 선택 시 `RequestAsync`, 저장/로드 복원 시 `ResolveSync` |
 | 재사용 방식 | `UBuildAssetSubsystem` 캐시 |
@@ -654,9 +654,10 @@ PP/Buildable/Buildable.cpp
 #### 구현 내용
 
 - 인벤토리는 20칸, 퀵슬롯은 6칸 구조로 구현했습니다.
-- 아이템 정보는 `FUIItemTableInfo` DataTable에서 읽고, 동일 아이템은 최대 수량까지 스택했습니다.
+- 아이템 정보는 `DTItemTable` DataTable에서 읽고, Row에 설정된 아이템 타입, 아이콘, 장비 정보, 제작 재료 정보등을 기준으로 인벤토리와 제작 UI를 구성했습니다.
 - 제작 UI는 무기, 장비, 건축 아이템, 음식 카테고리로 필터링합니다.
-- 퀘스트 UI는 사냥/제작 진행도를 갱신하고, 완료 시 보상을 인벤토리에 지급합니다.
+- 퀘스트 정보는 `DTQuest` DataTable에서 읽고, Row에 설정된 타입, 목표 수, 보상 정보를 기준으로 진행도와 완료 보상을 처리했습니다.
+DTItemTable
 
 #### 구현 규모
 
@@ -664,14 +665,15 @@ PP/Buildable/Buildable.cpp
 |---|---|
 | 인벤토리 슬롯 수 | 20칸 |
 | 퀵슬롯 수 | 6칸 |
-| 아이템 데이터 | `FUIItemTableInfo` DataTable 기반 |
+| 아이템 데이터 | `DTItemTable` DataTable / `FUIItemTableInfo` Row 기반 |
+| 퀘스트 데이터 | `DTQuest` DataTable / `FQuestTableInfo` Row 기반 |
 | 제작 카테고리 | 무기 / 장비 / 건축 아이템 / 음식 |
 | 퀘스트 타입 | `Collection` / `Hunt` / `Craft` |
 
 
 | 인벤토리 UI | 퀘스트 UI |
 |---|---|
-| <img width="426" height="240" alt="퀘스트" src="https://github.com/user-attachments/assets/e03f1a96-93ed-4878-8b33-00cbbf2a7b78" /> | <img width="426" height="240" alt="아이템창" src="https://github.com/user-attachments/assets/687c31ac-492b-47cd-bcc8-30136e0416c9" /> |
+| <img width="426" height="240" alt="아이템창" src="https://github.com/user-attachments/assets/687c31ac-492b-47cd-bcc8-30136e0416c9" /> | <img width="426" height="240" alt="퀘스트" src="https://github.com/user-attachments/assets/e03f1a96-93ed-4878-8b33-00cbbf2a7b78" /> | 
 
 
 #### 관련 코드

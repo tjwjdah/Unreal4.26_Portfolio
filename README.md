@@ -589,7 +589,7 @@ PP/Buildable/DestructibleBuildable.cpp
 
 #### 구현
 
-`FBuildDefinitionInfo`를 BuildDataTable Row로 정의해 건축물 정보를 데이터화했습니다.  
+`FBuildDefinitionInfo`를 `BuildDataTable` Row로 정의해 건축물 정보를 데이터화했습니다.  
 Row에는 건축물 타입, 재질 타입, Buildable Class, Static Mesh, Destructible Mesh, 내구도, 배치 조건, Anchor 여부, 업그레이드 Row 이름을 넣었습니다.
 
 건축물 클래스와 메시/파괴 메시는 Soft Reference로 관리했습니다.  
@@ -605,7 +605,7 @@ Row에는 건축물 타입, 재질 타입, Buildable Class, Static Mesh, Destruc
 
 | 항목 | 적용 방식 |
 |---|---|
-| 건축물 정의 | `BuildDataTable` DataTable / 'FBuildDefinitionInfo' Row 기반  |
+| 건축물 정의 | `BuildDataTable` DataTable / `FBuildDefinitionInfo` Row 기반  |
 | 에셋 참조 | `TSoftClassPtr`, `TSoftObjectPtr` |
 | 로드 방식 | 프리뷰 선택 시 `RequestAsync`, 저장/로드 복원 시 `ResolveSync` |
 | 재사용 방식 | `UBuildAssetSubsystem` 캐시 |

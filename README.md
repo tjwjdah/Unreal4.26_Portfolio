@@ -4,6 +4,12 @@
 > 대량으로 배치되는 건축물과 자원을 **HISM 기반 청크 시스템**으로 관리하고,  
 > **ID / InstanceIndex 매핑**, **청크 스트리밍**, **Dirty Chunk 저장/로드**, **DataTable 기반 콘텐츠 관리**, **AI 전투 시스템**을 구현했습니다.
 
+## 영상
+
+https://youtu.be/0txWLSwWrPc?si=d2CH1-GF88vsjKtm
+
+건축 시스템, HISM 기반 오브젝트 관리, 청크 스트리밍, Dirty Save, 인벤토리/퀘스트 UI, AI 전투와 보스 Phase 패턴을 보여주는 시연 영상입니다.
+
 ---
 
 <a id="table-of-contents"></a>
@@ -706,13 +712,6 @@ PP/PPGameInstance.cpp
 |---|
 | <img width="426" height="240" alt="몬스터전투" src="https://github.com/user-attachments/assets/4c9936b2-7f39-4fd4-9565-437167384a42" /> |
 
-
-#### 이미지/GIF 추천 위치
-
-| 위치 | 추천 자료 |
-|---|---|
-| 구현 내용 아래 | 일반 몬스터 탐지 → 추적 → 공격 GIF |
-| 측정 결과 아래 | Morigesh Phase 전환 및 보스 스킬 사용 GIF |
 
 #### 관련 코드
 <details>

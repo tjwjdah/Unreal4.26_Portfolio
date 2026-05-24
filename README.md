@@ -6,8 +6,11 @@
 
 ## 영상
 
-https://youtu.be/0txWLSwWrPc?si=d2CH1-GF88vsjKtm
 
+<img width="1912" height="998" alt="시작 및 건물 짓기 mkv_20260524_200705 979" src="https://github.com/user-attachments/assets/d8f33f75-6382-483d-8649-56785f829ed8" />
+
+- [영상 링크](https://youtu.be/0txWLSwWrPc?si=d2CH1-GF88vsjKtm)
+  
 건축 시스템, HISM 기반 오브젝트 관리, 청크 스트리밍, Dirty Save, 인벤토리/퀘스트 UI, AI 전투와 보스 Phase 패턴을 보여주는 시연 영상입니다.
 
 ---

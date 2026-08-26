@@ -309,12 +309,13 @@ Full Save는 625개 청크 전체를 다시 구성해야 해서 재구성 시간
 
 전체 저장 처리 시간도 329.165ms에서 93.710ms / 96.147ms로 줄어, 월드 규모가 커지고 일부 청크만 바뀌는 상황에서 Dirty Chunk 방식이 효과적이라고 봤습니다.
 
+
 #### 관련 코드
 <details>
 <summary>코드 파일 / 함수 목록 보기</summary>
   
 ```text
-PP/Chunk/ChunkSaveGame.h<img width="320" height="240" alt="청크연결" src="https://github.com/user-attachments/assets/da13c1f7-e9d7-437c-aeb5-102beef14452" />
+PP/Chunk/ChunkSaveGame.h
 
 AChunkManager::SaveWorld
 AChunkManager::SaveWorldFull

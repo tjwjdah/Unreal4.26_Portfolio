@@ -28,15 +28,14 @@
   - [공통 배경: Chunk System를 사용한 이유](#chunk-systems)
   - [4.2 Dirty Chunk 기반 저장/로드](#dirty-chunk-save-load)
   - [4.3 플레이어 위치 기반 청크 스트리밍](#chunk-streaming)
-  - [4.4 소켓 기반 건축 연결과 HISM ↔ Actor Hybrid](#socket-building-state)
+  - [4.4 소켓 기반 건축 연결과 HISM·Actor 혼합 구조](#socket-building-state)
   - [4.5 데이터 기반 건축 시스템과 에셋 로드](#data-driven-building)
   - [4.6 인벤토리 / 제작 / 퀘스트 UI](#inventory-crafting-quest)
   - [4.7 AI 전투 시스템](#ai-combat)
 - [5. 코드 구조](#code-structure)
 - [6. 공통 측정 환경](#measurement-method)
 - [7. 설계상 트레이드오프](#tradeoffs)
-- [8. 한 줄 요약](#one-line-summary)
-
+- 
 ---
 
 <a id="overview"></a>
@@ -76,6 +75,16 @@
 | HISM ↔ Actor Hybrid | 정적 건축물은 HISM으로 관리하고, 문 같은 상호작용이 필요한 오브젝트는 Actor로 유지했습니다. |
 | Behavior Tree 기반 AI | Task / Service / Decorator로 몬스터 행동과 보스 Phase 패턴을 분리했습니다. |
 
+/*
+HISM 기반 오브젝트 관리 와 ID ↔ InstanceIndex 매핑를 합치고
+Dirty Chunk Save 저장 기능
+Chunk Streaming  Connected Chunk Loading  를 합치고
+소켓 연결과 지지 판정	소켓 점유를 관리하고, 파괴 후 연결 그룹에 Anchor가 남아 있는지 BFS로 검사했습니다. 정적 건축물은 HISM, 문은 Actor로 관리했습니다.
+데이터·게임플레이 연동	건축 정의와 에셋 로드를 분리하고, 인벤토리·제작·퀘스트·Behavior Tree 기반 전투를 구현했습니다.
+이렇게 5개로 줄여달라
+/*
+
+
 ### 핵심 설계 흐름
 
 ```mermaid
@@ -89,7 +98,7 @@ flowchart LR
     F --> H[연결된 건축물 청크 추가 로드]
 ```
 
-HISM은 렌더링 최적화로만 쓰지 않고, ID 기반 상태 데이터와 연결해 개별 건축물/자원처럼 다룰 수 있게 만들었습니다. 
+HISM는 ID 기반 상태 데이터와 연결해 개별 건축물/자원처럼 다룰 수 있게 만들었습니다. 
 
 청크 스트리밍은 멀어진 HISM 인스턴스와 충돌 데이터를 월드에서 제거하고, Runtime SaveData 캐시만 남기는 방식으로 구현했습니다.
 
@@ -100,25 +109,21 @@ HISM은 렌더링 최적화로만 쓰지 않고, ID 기반 상태 데이터와 �
 
 ```mermaid
 flowchart TD
-    Player[APlayerCharacter] --> BuildManager[UBuildManagerComponent]
-    BuildManager --> BuildAssetSubsystem[UBuildAssetSubsystem]
-    BuildAssetSubsystem --> BuildDataTable[BuildDataTable DataTable]
-    BuildManager --> Preview[Build Preview Actor]
-    Preview --> ChunkManager[AChunkManager]
-
-    ChunkManager --> ChunkActor[AChunkActor]
-    ChunkActor --> HISM[HISM Components]
-    HISM --> IDMap[InstanceIndex ↔ ObjectID Mapping]
-    IDMap --> RuntimeMap[BuildingMap / ResourceMap]
-    RuntimeMap --> SaveGame[UChunkSaveGame]
-    ChunkManager --> SaveGame
-
-    Player --> Inventory[Inventory / Quick Slot UI]
-    Inventory --> ItemData[DTItemTable DataTable]
-    Player --> Quest[Quest UI]
-    Quest --> QuestData[DTQuest DataTable]
-    Monster[Monster / Morigesh] --> BT[Behavior Tree Tasks]
+    Preview[건축 선택과 프리뷰] --> Assets[DataTable과 에셋 캐시]
+    Assets --> Preview
+    Preview --> Manager[ChunkManager]
+    Manager --> Chunk[ChunkActor의 HISM과 ID 매핑]
+    Manager --> State[건축물·자원 상태와 소켓 연결]
+    Manager --> Door[부모 ID·소켓으로 관리하는 문 Actor]
+    State --> Save[청크별 SaveData]
+    Door --> Save
+    Save --> Manager
 ```
+
+ChunkManager는 로드된 오브젝트의 상태와 청크 로드·언로드를 관리합니다. 
+
+ChunkActor는 청크 내부에서 같은 Mesh를 HISM으로 묶고, Hit 결과의 InstanceIndex를 ID로 바꿔줍니다. 
+
 
 ---
 
@@ -149,20 +154,14 @@ flowchart TD
 
 #### 구현
 
-`AChunkManager`는 전체 청크와 런타임 상태를 관리하고, `AChunkActor`는 청크 내부 HISM 인스턴스를 관리합니다.
+HISM 인스턴스를 Actor처럼 다루기 위해 고유 ID를 발급하고 상태를 별도 Map에 저장했습니다.
 
-- `AChunkManager`: 청크 로드/언로드, 건축물/자원 ID 발급, `BuildingMap`, `ResourceMap` 관리, 저장/로드 및 Dirty Chunk 처리
-- `AChunkActor`: 청크 내부 HISM Component 관리, `InstanceIndex ↔ ObjectID` 매핑, Hit 결과 역조회
+| 데이터 | 관리하는 상태 |
+|---|---|
+| `BuildingMap` | 인스턴스 위치를 찾을 청크·Index, 건축물 정의, 내구도, 소켓 연결, 연결된 건축물 ID, Anchor 여부 |
+| `ResourceMap` | 청크·Index, 자원 정의, 체력, 자원 타입 |
 
-#### ID 기반 상태 관리
-
-HISM 인스턴스 자체에는 상태를 저장할 수 없기 때문에, 건축물과 자원에 고유 ID를 발급하고 실제 상태는 `BuildingMap`, `ResourceMap`에서 관리했습니다.
-
-- `BuildingMap`: 내구도, 최대 내구도, 건축물 정의 이름, 소켓 연결, 연결된 건축물 ID, Anchor 여부를 관리합니다.
-- `ResourceMap`: 체력, 자원 타입, 자원 정의 이름을 관리합니다.
-
-건축물은 소켓 연결, 업그레이드, 파괴, 지지 구조 판정이 필요해서 `SocketMap`, `ConnectedBuildingIDs`, `IsAnchor`를 추가로 관리했습니다.  
-자원은 채집/파괴에 필요한 체력과 자원 타입 위주로 관리했습니다.
+LineTrace나 Sweep에서 얻은 **HISM Component + InstanceIndex로 ID를 역조회**한 뒤, 해당 Map의 상태를 사용해 파괴·업그레이드·채집을 처리했습니다.
 
 ```text
 LineTrace Hit
@@ -176,6 +175,9 @@ BuildingMap / ResourceMap 접근
 Damage / Destroy / Upgrade / Harvest / Save 처리
 ```
 
+인스턴스를 삭제하면 마지막 인스턴스가 삭제된 자리로 옮겨지다보니 Index를 고유 ID로 사용할 수 없었습니다. 
+
+삭제 시 옮겨진 인스턴스의 ID를 반환하고, **청크의 Index→ID 매핑과 상태 Map의 InstanceIndex를 함께 갱신**했습니다. 업그레이드로 Mesh를 바꿀 때도 ID와 소켓 연결은 유지하고 인스턴스를 다시 등록했습니다.
 
 | Damage & Destroy | Upgrade |
 |---|---|
@@ -188,6 +190,8 @@ Damage / Destroy / Upgrade / Harvest / Save 처리
 
 #### 측정 결과
 
+4,500개 오브젝트를 같은 개수·배치 기준으로 비교했습니다.
+
 | 방식 | 생성 시간(ms) | 평균 FPS | Game Thread(ms) | GPU(ms) | Draw Calls | 비고 |
 |---|---:|---:|---:|---:|---:|---|
 | Actor | 2,155.8 | 68.0 | 14.7 | 14.7 | 4,676 | 개별 Actor 4,500개 Spawn |
@@ -195,31 +199,30 @@ Damage / Destroy / Upgrade / Harvest / Save 처리
 | HISM | 15.6 | 129.0 | 7.0 | 8.2 | 1,254 | 단일 HISM Component |
 | Chunk-HISM | 28.8 | 131.0 | 7.1 | 8.2 | 1,614 | 청크/ID/소켓 관리 포함 |
 
-같은 조건에서 4,500개 오브젝트를 배치해 Actor / ISM / HISM / Chunk-HISM을 비교했습니다. 
-Actor 방식은 Spawn 비용과 Draw Calls가 가장 높았고, ISM/HISM은 인스턴스로 등록하면서 생성 시간이 크게 줄었습니다.
+Chunk-HISM은 단일 HISM보다 생성 시간과 Draw Calls는 늘었지만, FPS/GPU 시간은 비슷했습니다.
 
-Chunk-HISM은 단일 HISM보다 생성 시간과 Draw Calls는 늘었지만, FPS/GPU 시간은 거의 같은 수준을 유지했습니다. 
-이 프로젝트에서는 순수 렌더링보다 청크 로드/언로드, ID 매핑, 소켓 연결 상태 관리가 더 중요했기 때문에 Chunk-HISM 구조를 선택했습니다.
+결국 Actor 수를 줄인 대신 **인스턴스 삭제, 내구도, 소켓 연결, 저장 상태를 직접 맞춰야 하는 관리 비용**이 생겼지만, 청크별 로드·언로드와 상태 관리가 중요했기 때문에 Chunk-HISM 구조를 선택했습니다.
 
 
 #### 관련 코드
 <details>
-<summary>코드 파일 / 함수 목록 보기</summary>
-  
+<summary>관련 코드 보기</summary>
+
 ```text
-PP/Chunk/ChunkManager.h
-PP/Chunk/ChunkManager.cpp
-PP/Chunk/ChunkActor.h
-PP/Chunk/ChunkActor.cpp
-PP/Tools/AInstancingBenchmark.h
-PP/Tools/AInstancingBenchmark.cpp
+PP/Chunk/ChunkActor.h / .cpp
+  AddInstance / RemoveInstance / GetMeshID
+PP/Chunk/ChunkManager.h / .cpp
+  UpgradeBuilding / RemoveOnlyBuilding / DestroyResource
+PP/Tools/AInstancingBenchmark.h / .cpp
+  RunBenchmark
 ```
+
 </details>
 
 ---
 
 <a id="chunk-systems"></a>
-### 공통 배경: Chunk System를 사용한 이유
+### Chunk System를 사용한 이유
 
 #### 문제
 
@@ -258,50 +261,37 @@ PP/Tools/AInstancingBenchmark.cpp
 
 #### 구현
 
-건축물 배치, 파괴, 업그레이드, 자원 채집처럼 월드 상태가 바뀌면 해당 위치의 청크만 Dirty로 표시했습니다.  
-저장 시에는 Dirty Chunk만 SaveGame 데이터에 반영합니다.
+배치·파괴·업그레이드·자원 채집으로 상태가 바뀌면 해당 청크를 `DirtyChunks`에 넣었습니다. 기존 저장 데이터에 변경 청크만 다시 구성해 병합하고, 비어버린 청크 데이터는 제거했습니다.
 
-Dirty Chunk는 일반 변경과 연결 그래프 변경을 나눠 처리했습니다.
+| 저장 대상 | 저장 내용 |
+|---|---|
+| 건축물 | ID, 정의 이름, Transform, 내구도, SocketMap |
+| 자원 | ID, 정의 이름, Transform, 체력, 자원 타입 |
+| 문 Actor | 부모 건축물 ID, 부모 소켓 이름, 정의 이름, Transform, 내구도 |
 
-- `DirtyChunks`: 건축물 배치, 파괴, 업그레이드, 자원 채집처럼 일반적인 월드 상태 변경
-- `GraphDirtyChunks`: 소켓 연결 변경처럼, 다음 스트리밍 계산 전에 Runtime SaveData 캐시를 먼저 최신화해야 하는 변경
+복원은 **인스턴스 생성 → 소켓 연결 복원 → 문 Actor 복원** 순서로 처리했습니다. 연결된 건축물 목록은 저장된 SocketMap에서 다시 만들고, 복원 중에는 새 변경으로 기록되지 않도록 Dirty 처리를 잠시 막았습니다.
 
-스트리밍 중에는 Runtime SaveData 캐시를 유지하고, 청크 언로드 또는 수동 저장 시 변경된 청크만 캐시에 반영했습니다.
 
-#### 저장 데이터 구조
+#### 추가 문제: 언로드 후 이전 상태로 돌아가는 경우
 
-| 데이터 | 주요 필드 | 용도 |
-|---|---|---|
-| `FBuildingSaveData` | `ID`, `BuildDefinitionName`, `Transform`, `Durability`, `SocketMap` | 건축물 위치, 내구도, 소켓 연결 복원 |
-| `FResourceSaveData` | `ID`, `Transform`, `Hp`, `ResourceType`, `ResourceDefinitionName` | 자원 위치, 체력, 타입 복원 |
-| `FAttachBuildableSaveData` | `ParentBuildingID`, `BuildDefinitionName`, `ParentSocketName`, `Transform`, `Durability` | 문 같은 부착형 Actor 복원 |
+스트리밍으로 청크를 제거할 때 변경 내용을 남기지 않으면, 다시 로드했을 때 파괴·업그레이드 이전 상태가 복원될 수 있었습니다.
 
-#### 구현 포인트
+그래서 스트리밍 중에는 **Runtime SaveData 캐시를 유지하고, Dirty 청크를 언로드하기 전에 캐시에 반영**했습니다. 
 
-- 건축물/자원 변경은 해당 위치의 청크만 Dirty로 표시했습니다.
-- 일반 변경과 소켓 연결 변경을 나눠, 연결 그래프 변경은 스트리밍 계산 전에 캐시에 먼저 반영했습니다.
-- Full Save와 Dirty Save 경로를 분리하고, Dirty Save는 변경된 청크만 기존 SaveData에 병합했습니다.
-- 문 같은 부착형 Actor는 부모 건축물과 소켓 정보를 담은 별도 SaveData로 저장했습니다.
-
-#### 보완한 부분: 스트리밍과 저장 캐시 동기화
-
-청크를 언로드하기 전에 변경 내용을 캐시에 반영하지 않으면, 다시 로드했을 때 이전 상태로 돌아갈 수 있습니다.  
-예를 들어 파괴한 건축물이 다시 생기거나, 업그레이드 전 상태로 복원될 수 있습니다.
-
-그래서 언로드 전 Dirty Chunk를 캐시에 반영하고, 수동 저장 시에도 Dirty Chunk만 SaveGame 데이터에 갱신하도록 분리했습니다.  
-또한 연결 구조가 바뀐 경우에는 연결 정보가 포함된 청크도 함께 Dirty 처리했습니다.
+수동 저장 시에는 남아 있는 변경도 캐시에 반영한 뒤 슬롯에 기록했습니다. 연결 구조 변경을 먼저 반영하는 `GraphDirtyChunks`는 다음 항목의 연결 청크 탐색에 사용했습니다.
 
 
 | 청크 저장 캐시 동기화 | 
 |---|
 | <img width="426" height="240" alt="스트리밍과 저장 캐시 동기화" src="https://github.com/user-attachments/assets/b564c8e0-fba1-4373-8554-884be7dec875" /> |
 
-건축물의 내구도를 감소시키고 업그레이드한 뒤 청크를 언로드/재로드해도, 이전 상태로 되돌아가지 않고 변경된 상태가 그대로 복원되는 것을 확인할 수 있습니다
+건축물의 내구도를 감소시키고 업그레이드한 뒤 청크를 언로드/재로드해도, 이전 상태로 되돌아가지 않고 변경된 상태가 그대로 유지되는 시연입니다.
 
 #### 측정 결과
 
-Dirty Save 측정은 625개 청크가 로드된 테스트 월드에서 진행했습니다.  
-Full Save는 전체 청크를 다시 저장 데이터로 만들고, Dirty Save는 변경된 청크만 다시 저장 데이터로 구성하도록 측정했습니다.
+스트리밍을 끄고 625개 청크를 로드한 테스트 월드에서 비교했습니다. 
+
+Full Save는 전체 청크를 재구성하고, Dirty Save는 기존 슬롯 데이터를 읽은 뒤 변경 청크만 재구성해 병합했습니다.
 
 | 방식 | 전체 청크 | 변경 청크 | 재구성 청크 | 재구성(ms) | 전체 저장(ms) |
 |---|---:|---:|---:|---:|---:|
@@ -318,18 +308,16 @@ Full Save는 625개 청크 전체를 다시 구성해야 해서 재구성 시간
 
 #### 관련 코드
 <details>
-<summary>코드 파일 / 함수 목록 보기</summary>
-  
+<summary>관련 코드 보기</summary>
+
 ```text
 PP/Chunk/ChunkSaveGame.h
-
-AChunkManager::SaveWorld
-AChunkManager::SaveWorldFull
-AChunkManager::SaveWorldDirty
-AChunkManager::LoadWorld
-AChunkManager::BuildChunkSaveData
-AChunkManager::FlushDirtyChunksSaveCache
+PP/Chunk/ChunkManager.cpp
+  SaveWorld / SaveWorldFull / SaveWorldDirty / LoadWorld
+  BuildChunkSaveData / SaveLoadChunkCache / FlushDirtyChunksSaveCache
+  LoadChunkRuntime / SpawnAttachBuildableSaveData
 ```
+
 </details>
 
 ---
@@ -339,96 +327,61 @@ AChunkManager::FlushDirtyChunksSaveCache
 
 #### 문제
 
-Dirty Chunk 저장으로 저장 비용은 줄일 수 있었지만, 모든 청크를 계속 로드해두면 런타임 월드 비용은 그대로 남습니다.
+Dirty Save로 저장 비용을 줄여도, 모든 지역의 HISM과 충돌 데이터를 계속 월드에 두면 런타임 관리 비용은 남았습니다.
 
-플레이어가 이동할수록 탐색 범위가 넓어지고, 건축물과 자원도 계속 누적되기 때문에 화면에 보이지 않는 지역의 HISM 인스턴스, Component, Collision 데이터까지 월드에 남게 됩니다.
-
-그래서 청크를 저장 단위뿐 아니라 로드/언로드 단위로도 사용했습니다. 플레이어 주변 청크만 유지하고, 멀어진 청크는 Runtime SaveData 캐시에 반영한 뒤 월드에서 제거하도록 구현했습니다.
-
-다만 건축물이 청크 경계를 넘어 연결될 수 있어서, 단순 거리 기준이 아니라 `SocketMap` 기준의 연결 청크도 함께 로드하도록 처리했습니다.
+그래서 청크를 저장 단위뿐 아니라 로드/언로드 단위로도 사용했습니다. 
 
 #### 구현
 
 플레이어 위치를 기준으로 중심 청크를 계산하고, 반경 안의 청크만 로드했습니다.  
-멀어진 청크는 Runtime SaveData 캐시에 반영한 뒤 월드에서 제거하고, 다시 가까워지면 SaveData를 기준으로 HISM 인스턴스를 재생성합니다.
 
+멀어진 청크는 Runtime SaveData 캐시에 반영한 뒤 월드에서 제거하고, 다시 가까워지면 SaveData를 기준으로 HISM 인스턴스를 재생성합니다.
 
 | 청크 스트리밍 | 
 |---|
 | <img width="426" height="240" alt="청크" src="https://github.com/user-attachments/assets/98270788-6568-4597-8068-92366926184e" /> |
 
 
-#### 구현 포인트
-
-- 플레이어 위치와 `StreamingRadius`를 기준으로 로드 대상 청크를 계산하고, 현재 로드된 청크와 비교해 Load / Unload 대상을 나눴습니다.
-- 언로드 대상 청크는 변경 내용을 Runtime SaveData 캐시에 반영한 뒤, HISM 인스턴스와 Collision 데이터를 월드에서 제거했습니다.
-- 다시 가까워진 청크는 SaveData를 기준으로 HISM 인스턴스를 재생성했습니다.
-- 청크 경계에 걸친 건축물은 `SocketMap` 기반 BFS로 연결 청크를 찾아 추가 로드했습니다.
-
-#### 보완한 부분: 경계 연결 처리
+#### 추가 문제와 개선: 경계 밖 연결도 유지
 
 기본 반경만 로드하면 문제가 생길 수 있습니다.  
 예를 들어 현재 청크의 천장이 바깥 청크의 Foundation에 연결되어 있다면, 바깥 청크가 언로드되면서 지지 구조나 소켓 연결 판정이 어긋날 수 있습니다.
 
-이를 줄이기 위해 먼저 플레이어 주변 청크를 기본 로드 대상으로 잡은 뒤 Runtime SaveData의 `SocketMap`을 기준으로 연결된 건축물 ID를 BFS로 순회하고, 연결된 건축물이 다른 청크에 있으면 그 청크도 최종 로드 대상에 추가했습니다.
+이를 보완하기 위해 다음 순서로 최종 로드 범위를 정했습니다.
 
-```text
-플레이어 위치 기준 기본 청크 계산
-    ↓
-기본 로드 청크 수집
-    ↓
-기본 청크를 BFS 시작점으로 추가
-    ↓
-Runtime SaveData 캐시의 소켓 연결 정보 확인
-    ↓
-연결된 건축물이 다른 청크에 있으면 추가 로드 대상에 포함
-    ↓
-새로 추가된 청크도 BFS 탐색 대상에 추가
-    ↓
-BFS 완료 후 최종 로드 대상 기준으로 Load / Unload 수행
-```
-
-이렇게 해서 연결된 건축물이 여러 청크에 걸쳐 있어도 필요한 청크를 함께 로드할 수 있었습니다. 대신 하나의 대형 구조물이 여러 청크를 가로지르면 활성 청크 수가 늘어날 수 있습니다.
-
+1. 소켓 연결이 바뀐 `GraphDirtyChunks`를 Runtime SaveData 캐시에 먼저 반영합니다.
+2. 기본 반경의 청크를 BFS 큐에 넣습니다.
+3. 각 청크에 저장된 건축물의 SocketMap을 읽고, 연결된 ID가 다른 청크에 있으면 그 청크를 추가합니다.
+4. 추가한 청크도 같은 방식으로 탐색한 뒤, 최종 목록을 기준으로 로드·언로드합니다.
 
 | 청크 연결 스트리밍 | 
 |---|
 | <img width="426" height="240" alt="청크연결" src="https://github.com/user-attachments/assets/57c9baf3-fb6f-4309-8bfc-8fed3e18628e" /> | 
 
+캐시의 연결 정보를 사용하므로 아직 로드하지 않은 청크도 탐색할 수 있었습니다. 대신 연결 변경을 캐시에 반영하는 순서가 중요해졌습니다. 플레이어가 같은 청크에 있어도 연결이 바뀌면 로드 대상을 다시 계산합니다.
+//플레이어가 같은 청크에 있어도 연결이 바뀌면 로드 대상을 다시 계산합니다. 이부분 이해가 잘안가는데 좀만 더 친절하게 설명
 
 #### 측정 결과
 
-Clean은 변경 없이 이동하며 순수 청크 로드 / 언로드 비용을 측정한 경우이고, Dirty는 활성 청크마다 건축물 1개를 추가한 뒤 언로드 비용을 측정한 경우입니다.
-
-##### 측정 조건
-
-| 케이스 | 조건 |
-|---|---|
-| 전체 로드 | 7x7 청크 전체를 상시 로드 |
-| Radius 1, Clean | 중심 청크 포함 3x3 유지, 변경 없이 이동 |
-| Radius 1, Dirty | 9개 청크에 건축물 1개씩 추가 후 언로드 |
-| Radius 2, Clean | 중심 청크 포함 5x5 유지, 변경 없이 이동 |
-| Radius 2, Dirty | 25개 청크에 건축물 1개씩 추가 후 언로드 |
-| Radius 1, Connected Clean | 기본 3x3 + 연결 청크 1개 추가 로드 |
-| Radius 1, Connected Dirty | 연결 포함 10개 청크에 건축물 1개씩 추가 후 언로드 |
-
-##### 활성 오브젝트 수
+전체 월드는 7×7청크입니다. Radius 1은 중심 포함 3×3, Radius 2는 5×5를 유지하며, Connected 케이스는 기본 3×3에 연결 청크 1개를 더 로드했습니다. Clean은 변경 없이 이동하고, Dirty는 활성 청크마다 건축물 1개를 추가한 뒤 언로드했습니다.
 
 | 케이스 | ActiveChunks | ActiveInstances | ActiveHISMComponents |
 |---|---:|---:|---:|
 | 전체 로드 | 49 | 2729 | 980 |
 | Radius 1, Clean | 9 | 507 | 180 |
-| Radius 1, Dirty | 9 | 516 | 180 | 
-| Radius 2, Clean | 25 | 1385 | 500 | 
+| Radius 1, Dirty | 9 | 516 | 180 |
+| Radius 2, Clean | 25 | 1385 | 500 |
 | Radius 2, Dirty | 25 | 1410 | 500 |
 | Radius 1, Connected Clean | 10 | 562 | 200 |
 | Radius 1, Connected Dirty | 10 | 572 | 200 |
 
 ##### 로드 / 언로드 비용
 
-`AvgCacheFlush`는 디스크 저장 시간이 아니라, 언로드 전 Dirty Chunk를 Runtime SaveData 캐시에 반영하는 평균 시간(ms)입니다.
+`AvgLoad`·`AvgUnload`는 청크 한 개의 평균 처리 시간입니다.
 
-| 케이스 | AvgLoad(ms) | AvgUnload(ms) | DirtyFlushCount | AvgCacheFlush(ms) |
+`CacheFlushCount`와 `AvgCacheFlush`는 측정 구간의 캐시 반영 횟수와 평균 시간으로, 디스크 저장 비용은 아닙니다. 
+
+| 케이스 | AvgLoad(ms) | AvgUnload(ms) | CacheFlushCount | AvgCacheFlush(ms) |
 |---|---:|---:|---:|---:|
 | 전체 로드 | - | - | - | - |
 | Radius 1, Clean | 1.185 | 0.436 | 0 | - |
@@ -438,6 +391,7 @@ Clean은 변경 없이 이동하며 순수 청크 로드 / 언로드 비용을 �
 | Radius 1, Connected Clean | 1.219 | 0.440 | 0 | - |
 | Radius 1, Connected Dirty | 1.254 | 0.494 | 10 | 0.107 |
 
+
 측정 결과, 전체 월드를 유지하지 않고 플레이어 주변 청크만 남기는 방식으로 ActiveChunks, ActiveInstances, ActiveHISMComponents를 크게 줄일 수 있었습니다. 
 Dirty Unload 상황에서도 Runtime SaveData 캐시 반영 비용은 0.1ms대로 유지되어, 언로드 전 캐시 갱신 비용은 크지 않다고 봤습니다.
 
@@ -445,21 +399,22 @@ Dirty Unload 상황에서도 Runtime SaveData 캐시 반영 비용은 0.1ms대�
 
 #### 관련 코드
 <details>
-<summary>코드 파일 / 함수 목록 보기</summary>
-  
+<summary>관련 코드 보기</summary>
+
 ```text
-AChunkManager::UpdateChunkStreamingAroundLocation
-AChunkManager::LoadChunkRuntime
-AChunkManager::UnloadChunkRuntime
-AChunkManager::BuildWantChunkSet
-AChunkManager::BuildConnectedWantedChunkSet
+PP/Chunk/ChunkManager.cpp
+  UpdateChunkStreamingAroundLocation
+  BuildWantChunkSet / BuildConnectedWantedChunkSet
+  LoadChunkRuntime / UnloadChunkRuntime
+  RebuildChunkDataIndex / AppendChunkStreamingCSV
 ```
+
 </details>
 
 ---
 
 <a id="socket-building-state"></a>
-### 4.4 소켓 기반 건축 연결과 HISM ↔ Actor Hybrid
+### 4.4 소켓 기반 건축 연결과 HISM·Actor 혼합 구조
 
 #### 문제
 
@@ -471,19 +426,15 @@ AChunkManager::BuildConnectedWantedChunkSet
 그래서 건축물 연결은 **Static Mesh Socket**을 기준으로 처리했습니다.  
 소켓은 각 건축물 Mesh에 미리 정의된 연결 지점이기 때문에, 벽은 벽에 맞는 위치로, 천장은 천장에 맞는 위치로, 계단은 계단에 맞는 위치로 자연스럽게 붙일 수 있었습니다.
 
-#### HISM ↔ Actor Hybrid를 같이 사용한 이유
+#### 정적 건축물과 문을 나눈 이유
 
 벽, 바닥, 천장, 창문, 계단처럼 배치 후 거의 움직이지 않는 건축물은 HISM으로 관리했습니다. 
 반면 문처럼 열림/닫힘, 애니메이션, 충돌 변경이 필요한 오브젝트는 HISM만으로 처리하기 어려워 Actor로 유지했습니다.
-
-정적 HISM 건축물은 `BuildingID` 기준으로 관리하고, 문 같은 부착형 Actor는 부모 `BuildingID`와 부모 소켓 이름을 기준으로 관리했습니다.
-정적 건축물의 소켓 연결, 내구도, 파괴, 업그레이드는 `BuildingMap` 기반으로 처리하고, 부착형 Actor는 부모 건축물과 소켓 정보를 담은 별도 SaveData로 복원했습니다.
 
 #### 검토한 방식
 
 | 방식 | 장점 | 한계 | 판단 |
 |---|---|---|---|
-| 모든 건축물을 Actor로 유지 | 문 상호작용, 애니메이션, 충돌 변경 구현이 쉬움 | 벽, 바닥, 천장처럼 대량 배치되는 정적 건축물까지 Actor 수가 증가 | 성능 측면에서 불리 |
 | 모든 건축물을 HISM으로 관리 | 대량 건축물 관리에 가장 유리 | 문처럼 상태 변화와 상호작용이 필요한 오브젝트 구현이 복잡 | 기능 구현 비용이 큼 |
 | HISM으로 두고 상호작용 시에만 임시 Actor 생성 | 평상시 Actor 수를 최소화할 수 있고, 상호작용 오브젝트가 많아질수록 장기적으로 유리 | HISM ↔ Actor 전환 시 Transform, Collision, Animation, 저장 데이터, 소켓 연결 상태를 모두 동기화해야 함 | 장기 개선 후보 |
 | 정적 건축물은 HISM, 상호작용 Actor만 유지 | 현재 프로젝트처럼 상호작용 Actor 개수가 적은 구조에서는 구현이 단순하고 안정적 | 상호작용 Actor가 많아지면 Actor 수와 별도 저장 데이터가 증가 | 현재 프로젝트 범위에서 최종 채택 |
@@ -521,76 +472,42 @@ Preview Transform을 소켓 기준으로 보정
 문 같은 부착형 Actor는 별도의 `BuildingID`를 새로 발급하지 않고, 부모 건축물 ID와 부모 소켓 이름을 기준으로 관리했습니다.  
 저장 시에는 부모 정보, Transform, 내구도를 별도 SaveData로 기록해 다시 복원할 수 있게 했습니다.
 
-
 | 소켓 기반 건축 | 
 |---|
 | <img width="426" height="240" alt="빌딩소켓건축" src="https://github.com/user-attachments/assets/a436ec00-0407-4465-b79e-5ffc5909b545" /> |
 
 
-#### 구현 포인트
-
-- 배치 가능한 대상 타입과 소켓을 제한하고, 가장 가까운 유효 소켓을 기준으로 프리뷰 위치와 회전을 보정했습니다.
-- 이미 사용 중인 소켓에는 다시 배치할 수 없도록 막고, 배치 완료 시 양쪽 건축물의 연결 정보를 갱신했습니다.
-- 정적 건축물은 HISM 인스턴스로 등록하고, 문 같은 부착형 오브젝트는 부모 건축물 ID와 소켓 이름을 기준으로 Actor로 유지했습니다.
-- 소켓 연결 정보는 저장/로드, 청크 경계 로드, 파괴 후 지지 구조 판정에 재사용했습니다.
-
 #### 보완한 부분: 충돌 검사에서 연결 그래프 기반 지지 판정으로 변경
 
-처음에는 건축물이 파괴될 때 주변 충돌 검사로 인접 건축물을 찾았습니다.
-하지만 여러 건축물이 한 번에 무너질 때 충돌 검사가 반복되고, 가까이 있지만 실제로 연결되지 않은 건축물까지 포함될 수 있었습니다.
+처음에는 파괴된 건축물 주변을 충돌 검사로 찾아 지지 관계를 확인했습니다. 여러 건축물이 무너질 때 검사가 반복되고, 가까이 있지만 실제로 연결되지 않은 건축물까지 포함될 수 있었습니다.
 
-그래서 배치 시점에 저장한 `ConnectedBuildingIDs`를 연결 그래프처럼 사용했습니다.  
-건축물이 파괴되면 먼저 파괴 대상과 연결되어 있던 건축물들을 시작점으로 저장하고, 파괴 대상을 연결 정보에서 제거한 뒤 각 시작점에서 BFS를 돌렸습니다.
+그래서 배치할 때 확정한 `ConnectedBuildingIDs`를 사용했습니다.
 
-BFS로 탐색된 연결 그룹 안에 `IsAnchor`가 있으면 아직 지지 구조와 이어져 있다고 보고 유지했습니다.  
-반대로 `IsAnchor`가 없다면 지지 구조와 끊어진 그룹으로 보고, 해당 그룹의 건축물들을 함께 제거했습니다.
-
-```text
-건축물 파괴
-    ↓
-파괴 대상과 연결되어 있던 건축물들을 시작점으로 저장
-    ↓
-파괴 대상을 소켓 연결 정보에서 제거
-    ↓
-각 시작점에서 연결된 건축물을 BFS로 탐색
-    ↓
-탐색된 연결 그룹에 Anchor가 있는지 확인
-    ↓
-Anchor가 있으면 유지
-Anchor가 없으면 해당 연결 그룹을 함께 제거
-```
-
-이 방식은 주변 충돌 검사를 반복하지 않고, 배치 과정에서 확정된 연결 정보만 사용합니다.  
-그래서 가까이 있지만 실제로 연결되지 않은 건축물이 잘못 포함되는 문제를 줄이고, 대량 파괴 상황도 연결 그래프 단위로 처리할 수 있습니다.
+1. 파괴 대상의 연결 이웃을 저장하고, 대상과 소켓 연결을 제거합니다.
+2. 남은 이웃에서 BFS로 연결 그룹을 찾습니다. 방문한 ID는 다시 검사하지 않습니다.
+3. 그룹 안에 `IsAnchor`인 건축물이 있으면 유지하고, 없으면 그룹 전체를 제거합니다.
 
 | 기반 파괴 | 
 |---|
 | <img width="426" height="240" alt="기반" src="https://github.com/user-attachments/assets/af1538dd-7a3a-4296-8dd2-c5754a8f5a10" /> |
 
 
-
 #### 관련 코드
 <details>
-<summary>코드 파일 / 함수 목록 보기</summary>
-  
+<summary>관련 코드 보기</summary>
+
 ```text
-AChunkManager::AddSocket
-AChunkManager::CheckSocket
-AChunkManager::AddHISMAttachBuildActor
-AChunkManager::RemoveHISMAttachBuildActor
-AChunkManager::DamageBuilding
-AChunkManager::DestroyBuilding
-AChunkManager::DisconnectBuilding
-AChunkManager::RemoveOnlyBuilding
-AChunkManager::UpgradeBuilding
-AChunkManager::UpgradeBuildingDefinitionName
-UBuildManagerComponent::FindClosestSocket
-ABuildable::Build
-ABuildable::BuildDestroy
-PP/Buildable/DoorBuildable.cpp
+PP/Buildable/BuildManagerComponent.cpp
+  FindClosestSocket / Building
+PP/Buildable/Buildable.cpp
+  Build / BuildDestroy / TakeDamage
 PP/Buildable/OpenDoorBuildable.cpp
-PP/Buildable/DestructibleBuildable.cpp
+  Build / PlayerOpenDoor
+PP/Chunk/ChunkManager.cpp
+  AddSocket / AddHISMAttachBuildActor / RemoveHISMAttachBuildActor
+  DestroyBuilding / DisconnectBuilding / RemoveOnlyBuilding
 ```
+
 </details>
 
 ---
@@ -598,68 +515,44 @@ PP/Buildable/DestructibleBuildable.cpp
 <a id="data-driven-building"></a>
 ### 4.5 데이터 기반 건축 시스템과 에셋 로드
 
-#### 문제
+건축물마다 클래스·Mesh·내구도·배치 조건을 코드에 직접 연결하면 종류가 늘 때 수정할 곳도 늘어납니다. 이를 `BuildDataTable`의 `FBuildDefinitionInfo`로 모았습니다. 건축 타입, 재질, 허용 소켓·대상 타입, Anchor 여부, 업그레이드 정의도 함께 관리했습니다.
 
-건축물 종류가 늘어날수록 클래스, 메시, 내구도, 재질, 배치 조건, 업그레이드 정보를 코드에 직접 연결하기 어렵습니다.  
-또 건축물 선택 시 필요한 에셋을 동기 로드하면 순간적인 끊김이 생길 수 있습니다.
+클래스·Static Mesh·Destructible Mesh는 Soft Reference로 두고, 로드와 캐시는 `UBuildAssetSubsystem`에서 처리했습니다.
 
-#### 구현
-
-`FBuildDefinitionInfo`를 `BuildDataTable` Row로 정의해 건축물 정보를 데이터화했습니다.  
-Row에는 건축물 타입, 재질 타입, Buildable Class, Static Mesh, Destructible Mesh, 내구도, 배치 조건, Anchor 여부, 업그레이드 Row 이름을 넣었습니다.
-
-건축물 클래스와 메시/파괴 메시는 Soft Reference로 관리했습니다.  
-프리뷰 선택 경로는 `RequestAsync`로 비동기 로드하고, 저장/로드 복원이나 청크 재생성처럼 즉시 필요한 경로는 `ResolveSync`로 처리했습니다.
-
-#### 구현 포인트
-
-- 건축물 클래스와 메시를 Soft Reference로 관리했습니다.
-- 프리뷰 선택 경로는 `RequestAsync`, 저장/로드 복원 경로는 `ResolveSync`를 사용했습니다.
-- 배치 확정 시 정적 건축물은 Actor를 유지하지 않고 Chunk HISM 인스턴스로 전환했습니다.
-
-#### 적용 방식
-
-| 항목 | 적용 방식 |
+| 경로 | 처리 |
 |---|---|
-| 건축물 정의 | `BuildDataTable` DataTable / `FBuildDefinitionInfo` Row 기반  |
-| 에셋 참조 | `TSoftClassPtr`, `TSoftObjectPtr` |
-| 로드 방식 | 프리뷰 선택 시 `RequestAsync`, 저장/로드 복원 시 `ResolveSync` |
-| 재사용 방식 | `UBuildAssetSubsystem` 캐시 |
-| 확장 방식 | DataTable Row 추가로 건축물 정의 확장 |
+| 건축 프리뷰 선택 | `RequestAsync`로 에셋을 준비한 뒤 프리뷰 생성 |
+| 이미 로드한 정의 재선택 | 캐시 재사용 |
+| 청크·저장 데이터 복원, 업그레이드 | `ResolveSync`로 즉시 사용할 에셋 확보 |
 
-#### 건축물 선택 및 배치 흐름
+비동기 로드 중 다른 건축물을 선택할 수 있으므로, 완료 시 **요청한 정의 이름과 현재 선택이 같은지 확인**한 뒤 프리뷰에 반영했습니다.
 
-```text
-Build UI에서 건축물 선택
-    ↓
-DataTable Row 조회
-    ↓
-Soft Reference 에셋 비동기 로드(RequestAsync)
-    ↓
-로드 완료 후 캐시에 저장
-    ↓
-Preview Actor 생성
-    ↓
-배치 가능 여부 검사
-    ↓
-배치 확정
-    ↓
-정적 건축물은 Chunk HISM Instance로 등록
-```
+기존 클래스와 배치 규칙을 따르는 건축물은 Row와 에셋을 추가해 정의할 수 있습니다. 새로운 행동이나 배치 규칙까지 데이터만으로 구현하는 방식은 아닙니다.
+
+프리뷰 선택의 에셋 로드는 비동기로 처리했지만, 청크 복원은 동기 로드와 인스턴스 등록을 한 번에 처리합니다. 큰 청크를 복원할 때의 끊김을 더 줄이려면 에셋 준비와 실제 등록을 나눌 필요가 있습니다.
+
+/*
+기존 클래스와 배치 규칙을 따르는 건축물은 Row와 에셋을 추가해 정의할 수 있습니다. 새로운 행동이나 배치 규칙까지 데이터만으로 구현하는 방식은 아닙니다.
+
+프리뷰 선택의 에셋 로드는 비동기로 처리했지만, 청크 복원은 동기 로드와 인스턴스 등록을 한 번에 처리합니다. 큰 청크를 복원할 때의 끊김을 더 줄이려면 에셋 준비와 실제 등록을 나눌 필요가 있습니다.
+
+이부분 말 너무 어렵다 좀 만 더 쉽게 풀어서
+
+*/
 
 #### 관련 코드
 <details>
-<summary>코드 파일 / 함수 목록 보기</summary>
-  
+<summary>관련 코드 보기</summary>
+
 ```text
 PP/GameInfo.h
-PP/AssetManager/BuildAssetSubsystem.h
-PP/AssetManager/BuildAssetSubsystem.cpp
-PP/Buildable/BuildManagerComponent.h
+  FBuildDefinitionInfo
+PP/AssetManager/BuildAssetSubsystem.h / .cpp
+  RequestAsync / ResolveSync / ResolveLoad
 PP/Buildable/BuildManagerComponent.cpp
-PP/Buildable/Buildable.h
-PP/Buildable/Buildable.cpp
+  SetBuildData / Building
 ```
+
 </details>
 
 ---
@@ -667,25 +560,11 @@ PP/Buildable/Buildable.cpp
 <a id="inventory-crafting-quest"></a>
 ### 4.6 인벤토리 / 제작 / 퀘스트 UI
 
-#### 구현 내용
+#### 구현
 
-- 인벤토리는 20칸, 퀵슬롯은 6칸 구조로 구현했습니다.
-- 아이템 정보는 `DTItemTable` DataTable에서 읽고, Row에 설정된 아이템 타입, 아이콘, 장비 정보, 제작 재료 정보등을 기준으로 인벤토리와 제작 UI를 구성했습니다.
-- 제작 UI는 무기, 장비, 건축 아이템, 음식 카테고리로 필터링합니다.
-- 퀘스트 정보는 `DTQuest` DataTable에서 읽고, Row에 설정된 타입, 목표 수, 보상 정보를 기준으로 진행도와 완료 보상을 처리했습니다.
-DTItemTable
-
-#### 구현 규모
-
-| 항목 | 내용 |
-|---|---|
-| 인벤토리 슬롯 수 | 20칸 |
-| 퀵슬롯 수 | 6칸 |
-| 아이템 데이터 | `DTItemTable` DataTable / `FUIItemTableInfo` Row 기반 |
-| 퀘스트 데이터 | `DTQuest` DataTable / `FQuestTableInfo` Row 기반 |
-| 제작 카테고리 | 무기 / 장비 / 건축 아이템 / 음식 |
-| 퀘스트 타입 | `Collection` / `Hunt` / `Craft` |
-
+- 인벤토리 20칸과 퀵슬롯 6칸을 구성하고, `DTItemTable`의 아이콘·타입·장비 정보를 사용했습니다.
+- 제작 목록은 무기·장비·건축 아이템·음식으로 필터링하고, 제작 재료와 결과 수량을 표시했습니다.
+- `DTQuest`에서 목표와 보상을 읽고, 사냥·제작 시 진행도를 갱신해 완료 보상을 지급했습니다.
 
 | 인벤토리 UI | 퀘스트 UI |
 |---|---|
@@ -694,16 +573,14 @@ DTItemTable
 
 #### 관련 코드
 <details>
-<summary>코드 파일 / 함수 목록 보기</summary>
-  
+<summary>관련 코드 보기</summary>
+
 ```text
-PP/Widget/InventoryTile.cpp
-PP/Widget/UseInventoryTile.cpp
-PP/Widget/Crafting.cpp
-PP/Widget/QuestWidget.cpp
-PP/GameInfo.h
-PP/PPGameInstance.cpp
+PP/Widget/InventoryTile.cpp / UseInventoryTile.cpp
+PP/Widget/Crafting.cpp / SelectedBlueprintInfo.cpp / QuestWidget.cpp
+PP/GameInfo.h / PPGameInstance.cpp
 ```
+
 </details>
 
 ---
@@ -725,24 +602,22 @@ PP/PPGameInstance.cpp
 
 #### 관련 코드
 <details>
-<summary>코드 파일 / 함수 목록 보기</summary>
-  
+<summary>관련 코드 보기</summary>
+
 ```text
 PP/AI/BTService_PlayerDetect.cpp
-PP/AI/BTDecorator_CheckDistance.cpp
-PP/AI/BTDecorator_CheckPhase.cpp
-PP/AI/BTTask_Patrol.cpp
-PP/AI/BTTask_TargetTrace.cpp
-PP/AI/BTTask_NormalAttack.cpp
-PP/AI/BTTask_Getaway.cpp
+PP/AI/BTDecorator_CheckDistance.cpp / BTDecorator_CheckPhase.cpp
+PP/AI/BTTask_Patrol.cpp / BTTask_TargetTrace.cpp
+PP/AI/BTTask_NormalAttack.cpp / BTTask_Getaway.cpp
 PP/AI/BTTask_MorigeshPhase0.cpp
-PP/AI/UBTTask_MorigeshPhase1.cpp
-PP/AI/UBTTask_MorigeshPhase2.cpp
-PP/Character/Monster/Morigesh.cpp
+PP/AI/UBTTask_MorigeshPhase1.cpp / UBTTask_MorigeshPhase2.cpp
+PP/Character/Monster/Morigesh.cpp / MorigeshAnim.cpp
 ```
+
 </details>
 
 ---
+
 
 <a id="code-structure"></a>
 ## 5. 코드 구조
@@ -815,10 +690,3 @@ HISM으로 건축물과 자원을 관리하면서 Actor / Component 수는 줄�
 이 방식은 구현이 단순하고 즉시 복원이 쉽지만, 청크 크기와 오브젝트 수가 커지면 순간적인 비용이 생길 수 있습니다.
 
 추후에는 청크 복원도 비동기 에셋 준비 단계와 실제 HISM 등록 단계를 분리하는 방식으로 확장할 수 있습니다.
-
----
-
-<a id="one-line-summary"></a>
-## 8. 한 줄 요약
-
-> 대량 건축물과 자원을 HISM·청크 스트리밍으로 관리하고, ID 기반 상태 관리와 DataTable 기반 콘텐츠 구조를 결합한 Unreal Engine C++ 클라이언트 포트폴리오입니다.

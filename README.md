@@ -6,11 +6,11 @@
 
 ## 시연 영상
 
-<img width="1912" height="998" alt="시작 및 건물 짓기 mkv_20260524_200705 979" src="https://github.com/user-attachments/assets/d8f33f75-6382-483d-8649-56785f829ed8" />
+<a href="https://youtu.be/0txWLSwWrPc?si=d2CH1-GF88vsjKtm">
+  <img width="1912" height="998" alt="시작 및 건물 짓기" src="https://github.com/user-attachments/assets/d8f33f75-6382-483d-8649-56785f829ed8" />
+</a>
 
-- [전체 시연 영상](https://youtu.be/0txWLSwWrPc?si=d2CH1-GF88vsjKtm)
-
-건축과 채집, 저장/로드, 인벤토리·퀘스트 UI, AI 전투를 확인할 수 있는 시연 영상입니다.
+#### ▶ [전체 시연 영상](https://youtu.be/0txWLSwWrPc?si=d2CH1-GF88vsjKtm)
 
 
 ***주의 코드업뎃안함!!!

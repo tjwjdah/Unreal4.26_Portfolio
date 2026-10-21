@@ -4,16 +4,16 @@
 > 대량으로 배치되는 건축물과 자원을 **HISM과 ID로 관리**하고,  
 > **연결 관계를 고려한 청크 스트리밍**, **변경된 청크를 반영하는 저장 방식**, **소켓 기반 건축 시스템**을 구현했습니다.
 
+---
+
 ## 시연 영상
 
 <a href="https://youtu.be/0txWLSwWrPc?si=d2CH1-GF88vsjKtm">
   <img width="1912" height="998" alt="시작 및 건물 짓기" src="https://github.com/user-attachments/assets/d8f33f75-6382-483d-8649-56785f829ed8" />
 </a>
 
-#### ▶ [전체 시연 영상](https://youtu.be/0txWLSwWrPc?si=d2CH1-GF88vsjKtm)
+▶ [전체 시연 영상](https://youtu.be/0txWLSwWrPc?si=d2CH1-GF88vsjKtm)
 
-
-***주의 코드업뎃안함!!!
 ---
 
 <a id="table-of-contents"></a>
@@ -47,7 +47,7 @@
 | 프로젝트명 | Survival Game |
 | 장르 | 3D 생존·액션·제작·건축 |
 | 엔진 / 언어 | Unreal Engine 4.26 / C++ |
-| 담당 영역 | 클라이언트 시스템 설계 및 구현 |
+| 담당 영역 | HISM·ID 기반 월드 관리, 청크 스트리밍·저장, 소켓 기반 건축, UI·AI 전투 |
 | 핵심 목표 | 대량의 건축물·자원을 효율적으로 관리하고, 청크 스트리밍·저장과 소켓 기반 건축을 연계한 생존 게임 구현 |
 | 개발 인원 | 1명 |
 | 개발 기간 | 3\~4개월 |

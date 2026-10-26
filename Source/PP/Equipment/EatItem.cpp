@@ -3,19 +3,13 @@
 
 #include "EatItem.h"
 #include "../Character/Player/PlayerCharacter.h"
-AEatItem::AEatItem() {
+UEatItem::UEatItem() {
 	m_ItemType = EItemType::Eat;
 }
 
-void AEatItem::BeginPlay()
-{
-}
 
-void AEatItem::Tick(float DeltaTime)
-{
-}
 
-void AEatItem::Use()
+void UEatItem::Use()
 {
 	m_Owner->SetEatItemOn(true);
 }

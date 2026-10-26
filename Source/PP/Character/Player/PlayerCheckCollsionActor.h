@@ -49,4 +49,10 @@ public:
 
 	UFUNCTION()
 		void GetWater();
+
+	void BoxUpdateOverlaps() {
+		if (!IsValid(m_CheckCollision))
+			return;
+		m_CheckCollision->UpdateOverlaps();
+	}
 };

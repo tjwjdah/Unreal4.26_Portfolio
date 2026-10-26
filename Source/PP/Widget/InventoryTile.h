@@ -24,7 +24,7 @@ class PP_API UInventoryTile : public UUserWidget
 	GENERATED_BODY()
 
 protected:
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UTexture2D* TestTexture;
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		//UTileView* m_InventoryTile;

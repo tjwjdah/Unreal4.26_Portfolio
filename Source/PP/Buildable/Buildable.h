@@ -35,6 +35,9 @@ protected:
 	FVector					ResultLocation;
 	FRotator				ResultRotator;
 	int32					HitAmount;
+
+	bool					GroundBuild;
+	bool					OnlyGrundBuild;
 	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Building)
 	//UAnimationAsset* BuildAnimation;
 
@@ -46,9 +49,17 @@ protected:
 		UMaterialInterface* CheckSucceededMaterial;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		UMaterialInterface* CheckFailMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		TArray<EBuildType>		AllowedTargetTypes;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		FString		BuildName;
 	bool BuildCheck;
 	bool PreBuildCheck;
 	bool FirstCheck;
+	bool Anchor;
+	
 	int32                   Durability;
 	int32                   DurabilityMax;
 	float					m_DestroyTime;
@@ -59,12 +70,16 @@ protected:
 
 	bool Destruct;
 
-
-
+	bool DoOnce;
+	const FBuildDefinitionInfo* BuildDefinitionInfo = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		TArray<ABuildable*> Pillars;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Building)
 		TArray<ABuildable*> Ceilings;
+
+
+	int32 AttachParentBuildingID = INDEX_NONE;
+	FName AttachParentSocketName;
 protected:
 
 
@@ -78,10 +93,11 @@ public:
 	//UFUNCTION(BlueprintCallable,Category = Building)
 	virtual void Build();
 
-	virtual void BuildChecking(FVector Location);
+	void BuildChecking();
 
 	bool GetBuildCheck() { return BuildCheck; }
 
+	void SetBuildCheck(bool Check) { BuildCheck = Check; }
 	USceneComponent* GetSceneComponent(int32 _SocketNum) {
 		if (SceneComponents.Num() > _SocketNum)	return SceneComponents[_SocketNum];
 		else
@@ -108,5 +124,26 @@ public:
 
 	virtual void AddCeilings(ABuildable* _Ceiling);
 
+	FVector GetActorSize() { return ActorSize; }
 
+	bool GetGroundBuild() { return GroundBuild; }
+	bool GetOnlyGrundBuild() {return OnlyGrundBuild;}
+
+
+	void SetGroundBuild(bool bGroundBuild) { GroundBuild = bGroundBuild; }
+	void SetOnlyGrundBuild(bool bOnlyGrundBuild) {OnlyGrundBuild = bOnlyGrundBuild;}
+	void SetAnchor(bool bAnchor) { Anchor = bAnchor; }
+	void SetAllowedTargetTypes(const TArray<EBuildType>& Types) { AllowedTargetTypes = Types;}
+
+	void SetBuildName(FString Name) {BuildName = Name;}
+	void SetBuildDefinition(const FBuildDefinitionInfo* Info, FString Name, UDestructibleMesh* DestructibleMesh, UStaticMesh* StaticMesh);
+
+	void SetAttachParentInfo(int32 ParentID, FName SocketName);
+
+	int32 GetAttachParentBuildingID() const { return AttachParentBuildingID; }
+	FName GetAttachParentSocketName() const { return AttachParentSocketName; }
+	FString GetBuildName() { return BuildName; }
+
+
+	void ApplyMaterialFromBaseMaterials();
 };

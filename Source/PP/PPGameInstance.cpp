@@ -26,6 +26,12 @@ UPPGameInstance::UPPGameInstance()
 
 	if (UIQuestInfoTableAsset.Succeeded())
 		m_UIQuestInfoTable = UIQuestInfoTableAsset.Object;
+
+	static ConstructorHelpers::FObjectFinder<UDataTable>	UIBuildDataTableAsset(TEXT("DataTable'/Game/Buildable/BuildDataTable.BuildDataTable'"));
+
+	if (UIBuildDataTableAsset.Succeeded())
+		m_BuildDataTable = UIBuildDataTableAsset.Object;
+	
 	/*
 	static ConstructorHelpers::FObjectFinder<UDataTable>	QuestInfoTableAsset(TEXT("DataTable'/Game/Quest/DTQuest.DTQuest'"));
 
@@ -195,20 +201,29 @@ void UPPGameInstance::Init()
 
 const FMonsterTableInfo* UPPGameInstance::FindMonsterInfo(const FString& Name)
 {
+	if (!m_MonsterInfoTable) return nullptr;
 	return m_MonsterInfoTable->FindRow<FMonsterTableInfo>(*Name, "");
 }
-
+/*
 const FPlayerTableInfo* UPPGameInstance::FindPlayerInfo(const FString& Name)
 {
 	return m_PlayerInfoTable->FindRow<FPlayerTableInfo>(*Name, "");
 }
-
+*/
 const FUIItemTableInfo* UPPGameInstance::FindUIItemInfo(const FString& Name)
 {
+	if (!m_UIItemInfoTable) return nullptr;
 	return m_UIItemInfoTable->FindRow<FUIItemTableInfo>(*Name, "");
 }
 
 const FQuestTableInfo* UPPGameInstance::FindUIQuestInfo(const FString& Name)
 {
+	if (!m_UIQuestInfoTable) return nullptr;
 	return m_UIQuestInfoTable->FindRow<FQuestTableInfo>(*Name, "");
+}
+
+const FBuildDefinitionInfo* UPPGameInstance::FindBuildInfo(const FString& Name)
+{
+	if (!m_BuildDataTable) return nullptr;
+	return m_BuildDataTable->FindRow<FBuildDefinitionInfo>(*Name, "");
 }

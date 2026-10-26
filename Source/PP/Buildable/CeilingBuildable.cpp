@@ -6,6 +6,9 @@
 #include "DoorBuildable.h"
 #include "WallBuildable.h"
 #include "FoundationBuildable.h"
+#include "../Chunk/ChunkManager.h"
+#include "../PPGameStateBase.h"
+
 ACeilingBuildable::ACeilingBuildable() {
 
 	PrimaryActorTick.bCanEverTick = true;
@@ -49,7 +52,17 @@ ACeilingBuildable::ACeilingBuildable() {
 	{
 		SceneComponents[i]->SetupAttachment(BuildComponents);
 	}
+	/*
+	BuildableSocketNames.Add(TEXT("CeilingSocket1"));
+	BuildableSocketNames.Add(TEXT("CeilingSocket2"));
+	BuildableSocketNames.Add(TEXT("CeilingSocket3"));
+	BuildableSocketNames.Add(TEXT("CeilingSocket4"));
 	
+	CheckAddSocketType.Add(EBuildType::Wall);
+	CheckAddSocketType.Add(EBuildType::DoorFrame);
+	CheckAddSocketType.Add(EBuildType::WindowFrame);
+	CheckAddSocketType.Add(EBuildType::Ceiling);
+	*/
 }
 
 void ACeilingBuildable::BeginPlay()
@@ -69,15 +82,9 @@ void ACeilingBuildable::Build()
 {
 	Super::Build();
 	
-	TArray<FHitResult>	resultArray;
+	
 
-	FCollisionQueryParams	params(NAME_None, false, this);
-	params.bReturnPhysicalMaterial = true;
-	params.bFindInitialOverlaps = true;
-	bool Hit = GetWorld()->SweepMultiByChannel(resultArray,
-		GetActorLocation() , GetActorLocation(), GetActorRotation().Quaternion(), ECollisionChannel::ECC_GameTraceChannel1,
-		FCollisionShape::MakeBox(FVector(150.f, 150.f, 10.f)),
-		params);
+	/*
 	if (Hit)
 	{
 		
@@ -92,6 +99,7 @@ void ACeilingBuildable::Build()
 			//PrintViewport(1.f, FColor::Blue, FString::Printf(TEXT("Distance %f"), Dis));
 			if (result.Actor->IsA(AWallBuildable::StaticClass()) && Dis == 150.f)
 			{
+				
 				AWallBuildable* Act = Cast<AWallBuildable>(result.Actor);
 				AddPillar(Act);
 				Act->AddCeilings(this);
@@ -122,11 +130,16 @@ void ACeilingBuildable::Build()
 	{
 		BuildDestroy();
 	}
+	*/
 }
-
+/*
 void ACeilingBuildable::BuildChecking(FVector Location)
 {
 	ResultLocation = Location;
+
+
+	
+	return;
 	HitAmount = 2;
 	FCollisionQueryParams	params(NAME_None, false, this);
 	params.bReturnPhysicalMaterial = true;
@@ -244,5 +257,5 @@ void ACeilingBuildable::BuildChecking(FVector Location)
 	SetActorRotation(ResultRotator);
 	Super::BuildChecking(ResultLocation);
 }
-
+*/
 

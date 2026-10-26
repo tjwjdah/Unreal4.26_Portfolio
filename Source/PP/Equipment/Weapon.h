@@ -10,12 +10,12 @@
  * 
  */
 UCLASS()
-class PP_API AWeapon : public AUseItem
+class PP_API UWeapon : public UUseItem
 {
 	GENERATED_BODY()
 
 public:
-	AWeapon();
+	UWeapon();
 protected:
 	EWeaponType m_Type;
 
@@ -27,13 +27,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		int32			m_BuildAttack;
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+
 
 public:
 	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
+	
 	EWeaponType GetWeaponType() { return m_Type; }
 
 public:

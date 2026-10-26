@@ -101,28 +101,9 @@ void UUseInventoryTile::ItemCharacterpass(int32 _Num, bool _Pass)
 		{
 		case EItemType::BuildItem:
 		{
-			AUseBuildable* MakeItem = NewObject<AUseBuildable>(m_Player,
-				AUseBuildable::StaticClass());
-			for (int32 i = 0; i < Info->OptionArray.Num(); i++) {
-				if (Info->OptionArray[i].OptionType == EItemOption::Durability)
-				{
-					MakeItem->SetMaxDurability(Info->OptionArray[i].Option);
-					MakeItem->SetDurability(Info->OptionArray[i].Option);
-					switch (Info->OptionArray[i].Option)
-					{
-					case 1000: MakeItem->SetMaterialType(EnvironmentsType::Wood);
-						break;
-					case 2000: MakeItem->SetMaterialType(EnvironmentsType::Stone);
-						break;
-					case 3000: MakeItem->SetMaterialType(EnvironmentsType::Metal);
-						break;
-					}
-				}
-			}
-			
-			
-			MakeItem->SetMesh(Info->DestructibleMesh, Info->Mesh);
-			MakeItem->SetBuildType(Info->EBuildType);
+			UUseBuildable* MakeItem = NewObject<UUseBuildable>(m_Player,
+				UUseBuildable::StaticClass());
+			MakeItem->SetBuildDefinitionName(Info->Name);
 			m_Player->SetInvenItem(MakeItem, _Num);
 		}
 		break;
@@ -132,8 +113,8 @@ void UUseInventoryTile::ItemCharacterpass(int32 _Num, bool _Pass)
 			{
 			case EWeaponType::Sword:
 			{
-				ASword* MakeItem = NewObject<ASword>(m_Player,
-					ASword::StaticClass());
+				USword* MakeItem = NewObject<USword>(m_Player,
+					USword::StaticClass());
 				MakeItem->SetMesh(Info->SkeletalMesh);
 				for (int32 i = 0; i < Info->OptionArray.Num(); i++) {
 					if (Info->OptionArray[i].OptionType == EItemOption::Attack)
@@ -154,8 +135,8 @@ void UUseInventoryTile::ItemCharacterpass(int32 _Num, bool _Pass)
 			case EWeaponType::Bow:
 			{
 				
-				ABow* MakeItem = NewObject<ABow>(m_Player,
-					ABow::StaticClass());
+				UBow* MakeItem = NewObject<UBow>(m_Player,
+					UBow::StaticClass());
 				MakeItem->SetMesh(Info->SkeletalMesh);
 				for (int32 i = 0; i<Info->OptionArray.Num(); i++) {
 					if (Info->OptionArray[i].OptionType == EItemOption::Attack)
@@ -171,8 +152,8 @@ void UUseInventoryTile::ItemCharacterpass(int32 _Num, bool _Pass)
 				break;
 			case EWeaponType::Pick:
 			{
-				APick* MakeItem = NewObject<APick>(m_Player,
-					APick::StaticClass());
+				UPick* MakeItem = NewObject<UPick>(m_Player,
+					UPick::StaticClass());
 				MakeItem->SetMesh(Info->SkeletalMesh);
 				for (int32 i = 0; i < Info->OptionArray.Num(); i++) {
 					if (Info->OptionArray[i].OptionType == EItemOption::Attack)
@@ -188,8 +169,8 @@ void UUseInventoryTile::ItemCharacterpass(int32 _Num, bool _Pass)
 				break;
 			case EWeaponType::Axe:
 			{
-				AAxe* MakeItem = NewObject<AAxe>(m_Player,
-					AAxe::StaticClass());
+				UAxe* MakeItem = NewObject<UAxe>(m_Player,
+					UAxe::StaticClass());
 				MakeItem->SetMesh(Info->SkeletalMesh);
 				for (int32 i = 0; i < Info->OptionArray.Num(); i++) {
 					if (Info->OptionArray[i].OptionType == EItemOption::Attack)
@@ -212,8 +193,8 @@ void UUseInventoryTile::ItemCharacterpass(int32 _Num, bool _Pass)
 			break;
 		case EItemType::Equipment:
 		{
-			AGarment* MakeItem = NewObject<AGarment>(m_Player,
-				AGarment::StaticClass());
+			UGarment* MakeItem = NewObject<UGarment>(m_Player,
+				UGarment::StaticClass());
 			for (int32 i = 0; i < Info->OptionArray.Num(); i++) {
 				if (Info->OptionArray[i].OptionType == EItemOption::Armor)
 					MakeItem->SetArmor(Info->OptionArray[i].Option);
@@ -224,8 +205,8 @@ void UUseInventoryTile::ItemCharacterpass(int32 _Num, bool _Pass)
 			break;
 		case EItemType::Eat:
 		{
-			AEatItem* MakeItem = NewObject<AEatItem>(m_Player,
-				AEatItem::StaticClass());
+			UEatItem* MakeItem = NewObject<UEatItem>(m_Player,
+				UEatItem::StaticClass());
 			for (int32 i = 0; i < Info->OptionArray.Num(); i++) {
 				MakeItem->SetOptions(Info->OptionArray[i]);
 			}

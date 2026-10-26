@@ -81,10 +81,11 @@ protected:
 
 	class UHPBar* m_HPBarWidget;
 	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	AActor* m_SpawnPoint;
 
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class UMonsterAnim* m_AnimInstance;
 	FString			m_MonsterInfoName;
 
@@ -128,6 +129,7 @@ protected:
 
 	bool		m_PatrolEnable;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class APatrolPointSpline* m_PatrolSpline;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
@@ -136,7 +138,7 @@ protected:
 	FVector2D	m_DestVector;
 	//TArray<FString>	m_DropItemNameArray;
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	AActor* m_AttackPlayer;
 
 	float				m_BeAttackedEndtime;

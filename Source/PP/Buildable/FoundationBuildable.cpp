@@ -2,6 +2,8 @@
 
 
 #include "FoundationBuildable.h"
+#include "../Chunk/ChunkManager.h"
+
 
 AFoundationBuildable::AFoundationBuildable() {
 	PrimaryActorTick.bCanEverTick = true;
@@ -134,6 +136,10 @@ AFoundationBuildable::AFoundationBuildable() {
 	SceneComponents[(int32)EFoundationSocket::RoofSocket]->SetWorldLocation(FVector(0.f, 0.f, 235.f));
 
 	PreBuildCheck = false;
+	BuildCheck = true;
+
+	//CheckAddSocketType.Add(EBuildType::Foundation);
+
 }
 
 void AFoundationBuildable::Tick(float DeltaTime)
@@ -146,14 +152,17 @@ void AFoundationBuildable::Tick(float DeltaTime)
 void AFoundationBuildable::Build()
 {
 	Super::Build();
+
+	
 }
 void AFoundationBuildable::BeginPlay()
 {
 	
 	Super::BeginPlay();
-
+	m_StaticMesh->SetMaterial(0, CheckSucceededMaterial);
 
 }
+/*
 void AFoundationBuildable::BuildChecking(FVector Location)
 {
 	
@@ -230,3 +239,4 @@ void AFoundationBuildable::BuildChecking(FVector Location)
 	SetActorLocation(ResultLocation);
 	Super::BuildChecking(ResultLocation);
 }
+*/

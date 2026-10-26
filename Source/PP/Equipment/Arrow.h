@@ -4,14 +4,14 @@
 
 
 #include "../GameInfo.h"
-#include "Equipment.h"
+#include "SpawnWeapon.h"
 #include "Arrow.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PP_API AArrow : public AEquipment
+class PP_API AArrow : public ASpawnWeapon
 {
 	GENERATED_BODY()
 
@@ -19,7 +19,7 @@ public:
 	AArrow();
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		UStaticMeshComponent* m_Mesh;
+		UStaticMeshComponent* m_StaticMesh;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		UProjectileMovementComponent* m_ProjectileMovement;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))

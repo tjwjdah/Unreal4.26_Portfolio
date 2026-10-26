@@ -2,17 +2,18 @@
 
 
 #include "UseBuildable.h"
+#include "../PPGameInstance.h"
 #include "../Buildable/BuildManagerComponent.h"
 #include "../Character/Player/PlayerCharacter.h"
-AUseBuildable::AUseBuildable() {
+UUseBuildable::UUseBuildable() {
 	m_ItemType = EItemType::BuildItem;
 }
 
 
-void AUseBuildable::Use() {
-	m_Owner->GetBuildManager()->SetMesh(m_DestructibleMesh, m_StaticMesh);
-	m_Owner->GetBuildManager()->SetDurability(Durability);
-	m_Owner->GetBuildManager()->SetMaxDurability(MaxDurability);
-	m_Owner->GetBuildManager()->SetBuildType(m_BuildType);
-	m_Owner->GetBuildManager()->SetMaterialType(m_MaterialType);
+void UUseBuildable::Use() {
+	if (BuildDefinitionName.IsEmpty())return;
+	
+	m_Owner->GetBuildManager()->BuilingDestroy();
+	m_Owner->GetBuildManager()->SetBuildData(BuildDefinitionName);
+
 }

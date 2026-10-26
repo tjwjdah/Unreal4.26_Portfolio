@@ -3,18 +3,18 @@
 #pragma once
 
 #include "../GameInfo.h"
-#include "GameFramework/Actor.h"
+#include "UObject/NoExportTypes.h"
 
 #include "UseItem.generated.h"
 
 UCLASS()
-class PP_API AUseItem : public AActor
+class PP_API UUseItem : public UObject
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	AUseItem();
+	UUseItem();
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		class APlayerCharacter* m_Owner;
@@ -22,13 +22,12 @@ protected:
 		EItemType m_ItemType;
 protected:
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	
 
 public:	
 	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 	EItemType GetItemType() {return m_ItemType; }
 	void SetItemType(EItemType _Type) { m_ItemType = _Type; }
-	void SetOwner(class APlayerCharacter* _Owner);
+	void SetPlayerOwner(class APlayerCharacter* _Owner);
 	virtual void Use() {};
 };

@@ -10,14 +10,14 @@
  * 
  */
 UCLASS()
-class PP_API ABow : public AWeapon
+class PP_API UBow : public UWeapon
 {
 	GENERATED_BODY()
 public:
-	ABow();
+	UBow();
 protected:
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	//virtual void BeginPlay() override;
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* m_Mesh;
@@ -34,8 +34,8 @@ private:
 public:
 	virtual void SetMesh(USkeletalMesh* _Mesh);
 	
-	void ArrowVisibility(bool _bool);
-	void ArrowShot(float _AimAlpha, FTransform _Transform);
+	//void ArrowVisibility(bool _bool);
+	//void ArrowShot(float _AimAlpha, FTransform _Transform);
 	virtual void Use();
 
 

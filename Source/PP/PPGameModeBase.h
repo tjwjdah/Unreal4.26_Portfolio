@@ -21,6 +21,7 @@ public:
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<UMainHUD>	m_MainHUDClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UMainHUD* m_MainHUD;
 public:
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage);

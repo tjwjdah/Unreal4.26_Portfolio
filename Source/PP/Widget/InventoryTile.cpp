@@ -38,25 +38,29 @@ void UInventoryTile::NativeConstruct()
 	m_InventorySlot->OnItemIsHoveredChanged().AddUObject(this, &UInventoryTile::ItemHOvered);
 	
 	UPPGameInstance* GameInst = Cast<UPPGameInstance>(GetWorld()->GetGameInstance());
+	
 	FString d = TEXT("Wood");
 	const FUIItemTableInfo* Info = GameInst->FindUIItemInfo(d);
 	if (Info)
 	{
-		AddItem(Info, 20);
+		AddItem(Info, 30);
 	}
+
 	d = TEXT("Metal");
 	Info = GameInst->FindUIItemInfo(d);
 	if (Info)
 	{
-		AddItem(Info, 20);
+		AddItem(Info, 30);
 	}
 	d = TEXT("Stone");
 	Info = GameInst->FindUIItemInfo(d);
 	if (Info)
 	{
-		AddItem(Info, 20);
+		AddItem(Info, 30);
 	}
 	
+	
+	/*
 	d = TEXT("PlateArmor");
 	Info = GameInst->FindUIItemInfo(d);
 	if (Info)
@@ -76,7 +80,24 @@ void UInventoryTile::NativeConstruct()
 	{
 		AddItem(Info, 1);
 	}
-	/*
+	d = TEXT("WoodFoundation");
+	Info = GameInst->FindUIItemInfo(d);
+	if (Info)
+	{
+		AddItem(Info, 30);
+	}
+	d = TEXT("WoodCeiling");
+	Info = GameInst->FindUIItemInfo(d);
+	if (Info)
+	{
+		AddItem(Info, 30);
+	}
+	d = TEXT("WoodWall");
+	Info = GameInst->FindUIItemInfo(d);
+	if (Info)
+	{
+		AddItem(Info, 30);
+	}
 	d = TEXT("WoodDoorFrame");
 	Info = GameInst->FindUIItemInfo(d);
 	if (Info)
@@ -102,23 +123,17 @@ void UInventoryTile::NativeConstruct()
 		AddItem(Info, 30);
 	}
 	
-	d = TEXT("WoodFence");
+	d = TEXT("WoodDoor");
 	Info = GameInst->FindUIItemInfo(d);
 	if (Info)
 	{
 		AddItem(Info, 30);
 	}
-	d = TEXT("WoodDoor");
-	Info = GameInst->FindUIItemInfo(d);
-	if (Info)
-	{
-		AddItem(Info, 20);
-	}
 	d = TEXT("WoodWindow");
 	Info = GameInst->FindUIItemInfo(d);
 	if (Info)
 	{
-		AddItem(Info, 20);
+		AddItem(Info, 30);
 	}
 	
 	d = TEXT("leather");
@@ -332,6 +347,8 @@ void UInventoryTile::AddItem(const FUIItemTableInfo* ItemInfo, int32 ItemAMount 
 			break;
 		}
 	}
+
+	if (ItemCount == -1)return;
 
 	while (AMount > ItemInfo->MaxAMount)
 	{

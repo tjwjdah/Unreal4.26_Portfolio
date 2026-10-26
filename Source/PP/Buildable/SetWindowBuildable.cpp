@@ -3,14 +3,20 @@
 
 #include "SetWindowBuildable.h"
 #include "WindowBuildable.h"
-
+#include "../Chunk/ChunkManager.h"
+#include "../PPGameStateBase.h"
 ASetWindowBuildable::ASetWindowBuildable() {
 	PrimaryActorTick.bCanEverTick = true;
+	//BuildableSocketNames.Add(TEXT("WindowSocket"));
+	//CheckAddSocketType.Add(EBuildType::WindowFrame);
+	
 }
 
 void ASetWindowBuildable::BeginPlay()
 {
 	Super::BeginPlay();
+
+	ActorSize *= 0.5f;
 }
 
 void ASetWindowBuildable::Tick(float DeltaTime)
@@ -20,7 +26,10 @@ void ASetWindowBuildable::Tick(float DeltaTime)
 
 void ASetWindowBuildable::Build()
 {
+	ActorSize = CollisionVolume->GetScaledBoxExtent();
 	Super::Build();
+	
+	/*
 	TArray<FHitResult>	resultArray;
 
 	FCollisionQueryParams	params(NAME_None, false, this);
@@ -41,8 +50,9 @@ void ASetWindowBuildable::Build()
 			}
 		}
 	}
+	*/
 }
-
+/*
 void ASetWindowBuildable::BuildChecking(FVector Location)
 {
 	ResultLocation = Location;
@@ -108,3 +118,4 @@ void ASetWindowBuildable::BuildChecking(FVector Location)
 	SetActorLocation(ResultLocation);
 	Super::BuildChecking(ResultLocation);
 }
+*/

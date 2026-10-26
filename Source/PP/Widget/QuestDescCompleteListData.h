@@ -23,6 +23,7 @@ private:
 	int32 m_Count;
 	int32 m_MaxCount;
 	int32 m_Index;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class UQuestDescCompleteListWidget* m_OwnerWidget;
 public:
 	int32 GetIndex() const

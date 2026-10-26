@@ -6,6 +6,8 @@
 #include "DoorBuildable.h"
 #include "WindowBuildable.h"
 #include "CeilingBuildable.h"
+#include "../Chunk/ChunkManager.h"
+#include "../PPGameStateBase.h"
 AWallBuildable::AWallBuildable() {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -68,6 +70,17 @@ AWallBuildable::AWallBuildable() {
 	
 	RoofSocketDown->SetWorldLocation(FVector(0.f, -150.f, 300.f));
 
+	/*BuildableSocketNames.Add(TEXT("WallSocket1"));
+	BuildableSocketNames.Add(TEXT("WallSocket2"));
+	BuildableSocketNames.Add(TEXT("WallSocket3"));
+	BuildableSocketNames.Add(TEXT("WallSocket4"));
+
+	CheckAddSocketType.Add(EBuildType::Wall);
+	CheckAddSocketType.Add(EBuildType::DoorFrame);
+	CheckAddSocketType.Add(EBuildType::WindowFrame);
+	CheckAddSocketType.Add(EBuildType::Ceiling);
+	CheckAddSocketType.Add(EBuildType::Foundation);
+	*/
 }
 
 void AWallBuildable::BeginPlay()
@@ -84,6 +97,10 @@ void AWallBuildable::Tick(float DeltaTime)
 void AWallBuildable::Build()
 {
 	Super::Build();
+
+
+
+	/*
 	TArray<FHitResult>	resultArray;
 
 	FCollisionQueryParams	params(NAME_None, false, this);
@@ -128,8 +145,9 @@ void AWallBuildable::Build()
 			}
 		}
 	}
+	*/
 }
-
+/*
 void AWallBuildable::BuildChecking(FVector Location)
 {
 	ResultLocation = Location;
@@ -241,3 +259,4 @@ void AWallBuildable::BuildChecking(FVector Location)
 	Super::BuildChecking(ResultLocation);
 }
 
+*/

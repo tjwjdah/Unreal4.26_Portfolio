@@ -11,6 +11,7 @@ AFenceBuildable::AFenceBuildable() {
 
 	USceneComponent* WallSocket = CreateDefaultSubobject<USceneComponent>(TEXT("WallSocket"));
 	SceneComponents.Add(WallSocket);
+	BuildCheck = true;
 }
 
 void AFenceBuildable::BeginPlay()
@@ -28,8 +29,11 @@ void AFenceBuildable::Tick(float DeltaTime)
 void AFenceBuildable::Build()
 {
 	Super::Build();
-}
 
+
+
+}
+/*
 void AFenceBuildable::BuildChecking(FVector Location)
 {
 	ResultLocation = Location;
@@ -82,3 +86,4 @@ void AFenceBuildable::BuildChecking(FVector Location)
 	Super::BuildChecking(ResultLocation);
 
 }
+*/

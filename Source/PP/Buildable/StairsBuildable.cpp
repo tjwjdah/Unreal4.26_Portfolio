@@ -4,11 +4,18 @@
 #include "StairsBuildable.h"
 #include "FoundationBuildable.h"
 #include "CeilingBuildable.h"
+#include "../Chunk/ChunkManager.h"
+#include "../PPGameStateBase.h"
 AStairsBuildable::AStairsBuildable() {
 	PrimaryActorTick.bCanEverTick = true;
 
 	USceneComponent* BuildComponents = CreateDefaultSubobject<USceneComponent>(TEXT("BuildComponents"));
 	SceneComponents.Add(BuildComponents);
+
+	//BuildableSocketNames.Add(TEXT("StairsSocket"));
+//	CheckAddSocketType.Add(EBuildType::Foundation);
+	//CheckAddSocketType.Add(EBuildType::Ceiling);
+	
 }
 
 void AStairsBuildable::BeginPlay()
@@ -26,6 +33,7 @@ void AStairsBuildable::Build()
 {
 	Super::Build();
 
+	/*
 	TArray<FHitResult>	resultArray;
 
 	FCollisionQueryParams	params(NAME_None, false, this);
@@ -52,8 +60,9 @@ void AStairsBuildable::Build()
 			}
 		}
 	}
+	*/
 }
-
+/*
 void AStairsBuildable::BuildChecking(FVector Location)
 {
 	ResultLocation = Location;
@@ -128,3 +137,4 @@ void AStairsBuildable::BuildChecking(FVector Location)
 	Super::BuildChecking(ResultLocation);
 
 }
+*/

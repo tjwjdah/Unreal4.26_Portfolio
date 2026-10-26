@@ -2,6 +2,7 @@
 
 
 #include "PPGameModeBase.h"
+#include "PPGameStateBase.h"
 #include "Character/Player/PlayerCharacter.h"
 
 APPGameModeBase::APPGameModeBase() {
@@ -19,7 +20,9 @@ APPGameModeBase::APPGameModeBase() {
 	if (MainHUDClass.Succeeded())
 		m_MainHUDClass = MainHUDClass.Class;
 
-	
+
+	GameStateClass = APPGameStateBase::StaticClass();
+
 }
 void APPGameModeBase::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
@@ -29,7 +32,7 @@ void APPGameModeBase::InitGame(const FString& MapName, const FString& Options, F
 
 void APPGameModeBase::BeginPlay()
 {
-	
+	Super::BeginPlay();
 	//Controller->bShowMouseCursor = true;
 	//Controller->mouse
 	
@@ -48,11 +51,13 @@ void APPGameModeBase::BeginPlay()
 	FActorSpawnParameters	param;
 	param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	APlayerCharacter* Instance = Cast<APlayerCharacter>(GEngine->GameSingleton);
-
-	
+	/*APlayerCharacter* Effect = GetWorld()->SpawnActor<APlayerCharacter>(Instance->GetClass(),
+		FVector(-64706.000000f, -163444.000000f, -6050.000000f), FRotator(0.f, 180.f, 0.f), param);
 	APlayerCharacter* Effect = GetWorld()->SpawnActor<APlayerCharacter>(Instance->GetClass(),
-		FVector(-70839.4375f, -113054.953125f, -4844.120605f), FRotator(0.f,180.f,0.f), param);
-	
+		FVector(-70839.4375f, -113054.953125f, -4844.120605f), FRotator(0.f,180.f,0.f), param);*/
+	APlayerCharacter* Effect = GetWorld()->SpawnActor<APlayerCharacter>(Instance->GetClass(),
+		FVector(-70050.000000, -166442.000000, -6504.090332), FRotator(0.f, 180.f, 0.f), param);
+
 	APlayerController* Controller = GetWorld()->GetFirstPlayerController();
 
 	FInputModeUIOnly	Mode;

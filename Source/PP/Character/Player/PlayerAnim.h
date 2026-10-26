@@ -92,7 +92,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Category = Tool)
 		float Hit_Direction;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Category = Tool)
-		class AWeapon* Active_Weapon;
+		class ASpawnWeapon* Active_Weapon;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Category = Tool)
 		EWeaponType WeaponType;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Category = Tool)
@@ -151,16 +151,22 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		bool m_Death;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UAnimSequence* SwordIdlePose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UAnimSequence* BowIdlePose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UAnimSequence* AxeIdlePose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UAnimSequence* PickIdlePose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UBlendSpace* BowMovingBlendspace;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UBlendSpace* SwordMovingBlendspace;
 
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UBlendSpaceBase* BowAO;
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UBlendSpaceBase* BaseAO;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
@@ -180,7 +186,7 @@ public:
 
 public:
 	void SetAiming(bool _Aiming) { Aiming = _Aiming; }
-	void SetWeapon(class AWeapon* _Active_Weapon);
+	void SetWeapon(class ASpawnWeapon* _Active_Weapon);
 	void SetWeaponOnOff(bool _OnOff) { WeaponOnOff = _OnOff; }
 	float GetBowAimAlpha() { return BowAimAlpha; }
 	void SetRyo(float _Ryo) { RYO = _Ryo;  Curve_Value = 0.f; Curve_Value_Last_Frame = 0; Curve_bool = false; }

@@ -19,6 +19,7 @@ public:
 
 private:
 	int32	m_Attack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class AMonster* m_Owner;
 
 	float	m_DestroyTime;
@@ -29,7 +30,7 @@ public:
 		m_Attack = Attack;
 	}
 
-	void SetOwner(class AMonster* Monster)
+	void SetMonsterOwner(class AMonster* Monster)
 	{
 		m_Owner = Monster;
 	}

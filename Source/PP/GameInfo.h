@@ -104,6 +104,12 @@ enum class EItemOption : uint8
 	BuildAttack
 };
 
+UENUM(BlueprintType)
+enum class EObType : uint8
+{
+	Building, // 0번대
+	Resource  // 100만번
+};
 USTRUCT(BlueprintType)
 struct FMonsterAttackInfo
 {
@@ -138,7 +144,7 @@ USTRUCT(BlueprintType)
 struct FDropItem
 {
 	GENERATED_BODY()
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	FString	ItemName;
 
@@ -358,4 +364,84 @@ enum class EState : uint8
 	Start,
 	Ing,
 	End
+};
+
+
+UENUM(BlueprintType)
+enum class EInstancingMode : uint8
+{
+	None,
+	Actor,
+	ISM,
+	HISM
+};
+
+USTRUCT(BlueprintType)
+struct FResourceTableInfo :
+	public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		FString	Name;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		TArray<FDropItem> m_DropItems;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	TSoftObjectPtr<UStaticMesh> StaticMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		int32 Hp = 3;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		EnvironmentsType Type;
+};
+class ABuildable;
+
+
+USTRUCT(BlueprintType)
+struct FBuildDefinitionInfo : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EBuildType BuildType = EBuildType::None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EnvironmentsType MaterialType = EnvironmentsType::Wood;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TSoftClassPtr<ABuildable> BuildableClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TSoftObjectPtr<UStaticMesh> StaticMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TSoftObjectPtr<UDestructibleMesh> DestructibleMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		int32 Durability = 1000;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		int32 MaxDurability = 1000;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool GroundBuild = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool GroundOnly = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool Anchor = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<EBuildType> AllowedTargetTypes;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<FName> AllowedTargetSockets;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString UpgradeName;
+
 };

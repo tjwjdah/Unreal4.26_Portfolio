@@ -22,7 +22,7 @@ private:
 		UPointLightComponent* m_PointLight;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		UNiagaraSystem* m_NiagaraParticle;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	AActor* m_Owner;
 
 

@@ -7,16 +7,19 @@
 #include "../Character/Player/PlayerCharacter.h"
 
 AArrow::AArrow() {
-	m_Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	
+	
+	m_StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
+	SetRootComponent(m_StaticMesh);
 	m_ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh>	MeshAsset(TEXT("StaticMesh'/Game/DynamicCombatSystem/Meshes/SM_ElvenArrow.SM_ElvenArrow'"));
 
 	if (MeshAsset.Succeeded())
-		m_Mesh->SetStaticMesh(MeshAsset.Object);
+		m_StaticMesh->SetStaticMesh(MeshAsset.Object);
 	m_On = false;
 
 	
-
+	m_StaticMesh->SetCollisionProfileName(TEXT("PlayerAttack"));
 	m_ProjectileMovement->bRotationFollowsVelocity = 1;
 	m_ProjectileMovement->InitialSpeed = 4000.f;
 	
@@ -24,7 +27,7 @@ AArrow::AArrow() {
 void AArrow::BeginPlay()
 {
 	Super::BeginPlay();
-	m_Mesh->SetCollisionProfileName(TEXT("PlayerAttack"));
+	
 	m_ProjectileMovement->OnProjectileStop.AddDynamic(this, &AArrow::ProjectileStop);
 	//m_ProjectileMovement->SetVelocityInLocalSpace(GetActorForwardVector() * m_InitialSpeed);
 	//SetLifeSpan(15.f);
@@ -63,15 +66,17 @@ void AArrow::ProjectileStop(const FHitResult& result)
 
 void AArrow::StopEvent(const FHitResult& result)
 {
+	if (!result.Actor.IsValid())
+		return;
 	if (result.Actor->IsA(AMonster::StaticClass()))
 	{
 		
 		AMonster* Monster = Cast<AMonster>(result.GetActor());
 
-		m_Mesh->AttachToComponent(Monster->GetMesh(), FAttachmentTransformRules::KeepWorldTransform, result.BoneName);
+		m_StaticMesh->AttachToComponent(Monster->GetMesh(), FAttachmentTransformRules::KeepWorldTransform, result.BoneName);
 		//PrintViewport(10.f, FColor::Blue, result.BoneName.ToString());
 		//m_Mesh->AttachToComponent(Monster->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, result.BoneName);
-		m_Mesh->SetCollisionProfileName(TEXT("NoCollision"));
+		m_StaticMesh->SetCollisionProfileName(TEXT("NoCollision"));
 		FVector Location =GetActorLocation() + GetActorForwardVector() *30.f;
 		SetActorLocation(Location);
 		FDamageEvent	DmgEvent;

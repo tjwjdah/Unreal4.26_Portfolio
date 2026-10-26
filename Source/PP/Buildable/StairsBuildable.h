@@ -24,5 +24,5 @@ public:
 	//UFUNCTION(BlueprintCallable, Category = Building)
 	virtual void Build();
 
-	virtual void BuildChecking(FVector Location);
+	//virtual void BuildChecking(FVector Location);
 };

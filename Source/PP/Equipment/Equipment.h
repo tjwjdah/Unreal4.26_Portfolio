@@ -7,24 +7,22 @@
 #include "Equipment.generated.h"
 
 UCLASS()
-class PP_API AEquipment : public AUseItem
+class PP_API UEquipment : public UUseItem
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	AEquipment();
+	UEquipment();
 
 
 
 
 protected:
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
+	
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+
 public:
 	//virtual void SetMesh(const FString& Path) {};
 	virtual void SetMesh(USkeletalMesh* _Mesh) {};

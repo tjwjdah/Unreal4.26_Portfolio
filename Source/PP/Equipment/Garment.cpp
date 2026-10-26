@@ -3,16 +3,12 @@
 
 #include "Garment.h"
 #include "../Character/Player/PlayerCharacter.h"
-AGarment::AGarment() {
+UGarment::UGarment() {
 
 }
 
-void AGarment::BeginPlay()
-{
-	Super::BeginPlay();
-}
 
-void AGarment::Use()
+void UGarment::Use()
 {
 
 }

@@ -20,7 +20,6 @@ AItemBox::AItemBox()
 	SetRootComponent(m_Box);
 
 	m_Mesh->SetupAttachment(m_Box);
-
 	//static ConstructorHelpers::FObjectFinder<UStaticMesh>	MeshAsset(TEXT("StaticMesh'/Game/Item/ItemBox.ItemBox'"));
 
 	//if (MeshAsset.Succeeded())
@@ -30,7 +29,7 @@ AItemBox::AItemBox()
 	m_DestroyTime = 0.f;
 	m_DestroyOn = false;
 	m_PlayerOn = true;
-
+	
 	m_BoxOn = false;
 }
 

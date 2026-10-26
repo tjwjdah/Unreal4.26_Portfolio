@@ -136,6 +136,8 @@ private:
 	UPROPERTY()
 		UDataTable* m_UIQuestInfoTable;
 
+	UPROPERTY()
+		UDataTable* m_BuildDataTable;
 	/*
 	UPROPERTY()
 		UDataTable* m_UIItemInfoTable;
@@ -177,9 +179,10 @@ public:
 
 public:
 	const FMonsterTableInfo* FindMonsterInfo(const FString& Name);
-	const FPlayerTableInfo* FindPlayerInfo(const FString& Name);
+	//const FPlayerTableInfo* FindPlayerInfo(const FString& Name);
 	const FUIItemTableInfo* FindUIItemInfo(const FString& Name);
 	const FQuestTableInfo* FindUIQuestInfo(const FString& Name);
+	const FBuildDefinitionInfo* FindBuildInfo(const FString& Name);
 	const UDataTable* GetUIItemInfo() { return m_UIItemInfoTable; }
 	
 	//const FQuestTableInfo* FindQuestInfo(const FString& Name);

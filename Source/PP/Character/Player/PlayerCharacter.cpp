@@ -8,13 +8,17 @@
 #include "../../Widget/MainHUD.h"
 #include "../../Widget/DurabilityBar.h"
 #include "PlayerAnim.h"
-
+#include "PlayerCheckCollsionActor.h"
+#include "../../Chunk/ChunkActor.h"
+#include "../../PPGameStateBase.h"
 #include "../../PPGameModeBase.h"
 #include "../../PPGameInstance.h"
 #include "../../Widget/MainHUD.h"
 #include "../../Widget/Crosshair.h"
 #include "../../Equipment/Weapon.h"
+#include "../../Equipment/SpawnWeapon.h"
 #include "../../Equipment/Bow.h"
+#include "../../Equipment/SpawnBow.h"
 #include "../../Environments/Environments.h"
 #include "../../Widget/CharacterState.h"
 #include "../../Effect/MagicCircle.h"
@@ -71,7 +75,7 @@ APlayerCharacter::APlayerCharacter()
 	Stuuned = false;
 
 	JogSpeed = 360.f;
-	SprintSpeed =600.f;
+	SprintSpeed =1200.f;
 
 	m_WeaponOn = false;
 
@@ -140,7 +144,13 @@ APlayerCharacter::APlayerCharacter()
 
 
 	GetMesh()->SetReceivesDecals(false);
-	m_CheckedBuild = nullptr;
+	CurrentBuildID = -1;
+
+
+	GifTopViewArmLength = 10000.f;
+	GifTopViewFOV = 70.f;
+	GifTopViewPitch = -90.f;
+	bGifTopView = false;
 }
 
 // Called when the game starts or when spawned
@@ -243,165 +253,69 @@ void APlayerCharacter::Tick(float DeltaTime)
 
 		bool Hit = GetWorld()->LineTraceSingleByChannel(result, m_Camera->GetComponentLocation(), End,
 			ECollisionChannel::ECC_GameTraceChannel11, params);
-
+		
 		if (Hit)
 		{
-			if (result.Actor->IsA(ABuildable::StaticClass()))
+			
+			UInstancedStaticMeshComponent* HitHISM = Cast<UInstancedStaticMeshComponent>(result.Component);
+			AChunkActor* HitChunk = Cast<AChunkActor>(result.GetActor());
+			if (IsValid(HitHISM) && IsValid(HitChunk))
 			{
-				
-				ABuildable* Act = Cast<ABuildable>(result.Actor);
-				
-				m_MainHUD->GetDurabilityBar()->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), Act->GetDurability(), Act->GetMaxDurability())));
-				m_MainHUD->GetDurabilityBar()->SetDurabilityPercent((float)Act->GetDurability() / (float)Act->GetMaxDurability());
-
-				if (m_CheckedBuild != Act)
+				UStaticMesh* HitMesh = HitHISM->GetStaticMesh();
+				int32 HitIndex = result.Item;
+				int32 TargetID = HitChunk->GetMeshID(HitHISM, HitIndex);
+			
+				if (TargetID != -1 && TargetID < 1000000)
 				{
-					m_CheckedBuild = Act;
-					EnvironmentsType MaterialType = Act->GetMaterialType();
 
-					FString BuildName;
-					if (MaterialType != EnvironmentsType::Metal)
-					{
+					AChunkManager* ChunkManager = Cast<APPGameStateBase>(UGameplayStatics::GetGameState(GetWorld()))->GetChunkManager();
 
-						switch (Act->GetBuildType())
-						{
-						case EBuildType::Foundation:
-						{
-							if (MaterialType == EnvironmentsType::Wood)
-							{
-								BuildName = TEXT("StoneFoundation");
-							}
-							else if (MaterialType == EnvironmentsType::Stone)
-							{
-								BuildName = TEXT("MetalFoundation");
-							}
-						}
-						break;
-						case EBuildType::Wall:
-						{
-							if (MaterialType == EnvironmentsType::Wood)
-							{
-								BuildName = TEXT("StoneWall");
-							}
-							else if (MaterialType == EnvironmentsType::Stone)
-							{
-								BuildName = TEXT("MetalWall");
-							}
-						}
-						break;
-						case EBuildType::Ceiling:
-						{
-							if (MaterialType == EnvironmentsType::Wood)
-							{
-								BuildName = TEXT("StoneCeiling");
-							}
-							else if (MaterialType == EnvironmentsType::Stone)
-							{
-								BuildName = TEXT("MetalCeiling");
-							}
-						}
-						break;
-						case EBuildType::DoorFrame:
-						{
-							if (MaterialType == EnvironmentsType::Wood)
-							{
-								BuildName = TEXT("StoneDoorFrame");
-							}
-							else if (MaterialType == EnvironmentsType::Stone)
-							{
-								BuildName = TEXT("MetalDoorFrame");
-							}
-						}
-						break;
-						case EBuildType::WindowFrame:
-						{
-							if (MaterialType == EnvironmentsType::Wood)
-							{
-								BuildName = TEXT("StoneWindowFrame");
-							}
-							else if (MaterialType == EnvironmentsType::Stone)
-							{
-								BuildName = TEXT("MetalWindowFrame");
-							}
-						}
-						break;
-						case EBuildType::Ramp:
-						{
-							if (MaterialType == EnvironmentsType::Wood)
-							{
-								BuildName = TEXT("StoneRamp");
-							}
-							else if (MaterialType == EnvironmentsType::Stone)
-							{
-								BuildName = TEXT("MetalRamp");
-							}
-						}
-						break;
-						case EBuildType::Stairs:
-						{
-							if (MaterialType == EnvironmentsType::Wood)
-							{
-								BuildName = TEXT("StoneStairs");
-							}
-							else if (MaterialType == EnvironmentsType::Stone)
-							{
-								BuildName = TEXT("MetalStairs");
-							}
-						}
-						break;
-						case EBuildType::Fence:
-						{
-							if (MaterialType == EnvironmentsType::Wood)
-							{
-								BuildName = TEXT("StoneFence");
-							}
-							else if (MaterialType == EnvironmentsType::Stone)
-							{
-								BuildName = TEXT("MetalFence");
-							}
-						}
-						break;
-						case EBuildType::Door:
-						{
-							if (MaterialType == EnvironmentsType::Wood)
-							{
-								BuildName = TEXT("StoneDoor");
-							}
-							else if (MaterialType == EnvironmentsType::Stone)
-							{
-								BuildName = TEXT("MetalDoor");
-							}
-						}
-						break;
-						case EBuildType::Window:
-						{
-							if (MaterialType == EnvironmentsType::Wood)
-							{
-								BuildName = TEXT("StoneWindow");
-							}
-							else if (MaterialType == EnvironmentsType::Stone)
-							{
-								BuildName = TEXT("MetalWindow");
-							}
-						}
-						break;
-						}
+					if (!ChunkManager->FindBuildMapNode(TargetID))
+						return;
+					FBuildingNode TargetNode = ChunkManager->GetBuildMapNode(TargetID);
 					
-					UPPGameInstance* GameInst = Cast<UPPGameInstance>(GetWorld()->GetGameInstance());
-					m_BuildUpgradeInfo = GameInst->FindUIItemInfo(BuildName);
-					m_BuildUpgradeNum = m_MainHUD->GetInventory()->FindItem(m_BuildUpgradeInfo);
+					m_MainHUD->GetDurabilityBar()->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), TargetNode.Durability, TargetNode.MaxDurability)));
+					m_MainHUD->GetDurabilityBar()->SetDurabilityPercent((float)TargetNode.Durability / (float)TargetNode.MaxDurability);
 
-					if (m_BuildUpgradeNum != -1)
+					if (CurrentBuildID != TargetID)
 					{
-						m_MainHUD->GetHotKey()->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-						m_MainHUD->GetHotKey()->SetKeyText(FText::FromString(FString::Printf(TEXT("E"))), FText::FromString(FString::Printf(TEXT("Upgrade"))));
-						m_NameDelegate.BindUObject(this, &APlayerCharacter::Upgrade);
+						CurrentBuildID = TargetID;
+						UPPGameInstance* GameInst = Cast<UPPGameInstance>(GetWorld()->GetGameInstance());
+						const FBuildDefinitionInfo* Info = GameInst->FindBuildInfo(TargetNode.BuildDefinitionName);
+						if (!Info) {
+							ClearUpgradeState();
+							return;
+						}
+						BuildName = Info->UpgradeName;
+						if (BuildName.IsEmpty()) {
+							ClearUpgradeState();
+							return;
+						}
+						m_BuildUpgradeInfo = GameInst->FindUIItemInfo(BuildName);
+						if (!m_BuildUpgradeInfo)
+						{
+							ClearUpgradeState();
+							return;
+						}
+						m_BuildUpgradeNum = m_MainHUD->GetInventory()->FindItem(m_BuildUpgradeInfo);
+
+						if (m_BuildUpgradeNum != -1)
+						{
+							m_MainHUD->GetHotKey()->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+							m_MainHUD->GetHotKey()->SetKeyText(FText::FromString(FString::Printf(TEXT("E"))), FText::FromString(FString::Printf(TEXT("Upgrade"))));
+							m_NameDelegate.BindUObject(this, &APlayerCharacter::Upgrade);
+						}
+						
 					}
-					}
+
 				}
+					
+				
 			}
 		}
 	}
+
+
 	if (m_OnSkill2)
 	{
 		FHitResult	result;
@@ -484,12 +398,39 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction(TEXT("KeyAction"), EInputEvent::IE_Pressed, this,
 		&APlayerCharacter::Action);
 
-
 	PlayerInputComponent->BindAction(TEXT("Test"), EInputEvent::IE_Pressed, this,
 		&APlayerCharacter::Test22);
+
+	PlayerInputComponent->BindAction(TEXT("Save"), EInputEvent::IE_Pressed, this,
+		&APlayerCharacter::Save);
+
+	PlayerInputComponent->BindAction(TEXT("Load"), EInputEvent::IE_Pressed, this,
+		&APlayerCharacter::Load);
+
+	PlayerInputComponent->BindAction(TEXT("GifTopView"), EInputEvent::IE_Pressed, this,
+		&APlayerCharacter::ToggleGifTopView);
+
+	PlayerInputComponent->BindAction(TEXT("draw"), EInputEvent::IE_Pressed, this,
+		&APlayerCharacter::draw);
 	
 }
 
+void APlayerCharacter::draw() {
+	APPGameStateBase* GameState = Cast<APPGameStateBase>(UGameplayStatics::GetGameState(GetWorld()));
+	if (!GameState)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SaveWorldTest] GameState is null"));
+		return;
+	}
+
+	AChunkManager* ChunkManager = GameState->GetChunkManager();
+	if (!ChunkManager)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SaveWorldTest] ChunkManager is null"));
+		return;
+	}
+	ChunkManager->DrawChunkGrid_Editor();
+}
 float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	float Damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
@@ -657,7 +598,7 @@ void APlayerCharacter::AttackKey()
 	}
 	else if (m_EatItemOn && m_UseInvenNum>=0)
 	{
-		AEatItem* EatItem = Cast<AEatItem>(m_UseInven[m_UseInvenNum]);
+		UEatItem* EatItem = Cast<UEatItem>(m_UseInven[m_UseInvenNum]);
 		TArray<FItemOption>& Options = EatItem->GetOptions();
 		for (int32 i = 0; i < Options.Num(); i++)
 		{
@@ -676,7 +617,7 @@ void APlayerCharacter::AttackKey()
 				m_Engrgy = m_Engrgy+ Options[i].Option;
 				if (m_Engrgy > 100.f)
 					m_Engrgy = 100.f;
-				m_StateBar->SetEnergyPercent(m_Hp / 100.f);
+				m_StateBar->SetEnergyPercent(m_Engrgy / 100.f);
 			}
 				break;
 			case EItemOption::HungerRecovery:
@@ -684,7 +625,7 @@ void APlayerCharacter::AttackKey()
 				m_Hunger = m_Hunger+ Options[i].Option;
 				if (m_Hunger > 100.f)
 					m_Hunger = 100.f;
-				m_StateBar->SetHungerPercent(m_Hp / 100.f);
+				m_StateBar->SetHungerPercent(m_Hunger / 100.f);
 			}
 				break;
 			case EItemOption::ThirstRecovery:
@@ -692,7 +633,7 @@ void APlayerCharacter::AttackKey()
 				m_Thirst = m_Thirst+ Options[i].Option;
 				if (m_Thirst > 100.f)
 					m_Thirst = 100.f;
-				m_StateBar->SetThirstPercent(m_Hp / 100.f);
+				m_StateBar->SetThirstPercent(m_Thirst / 100.f);
 			}
 				break;
 			}
@@ -724,7 +665,7 @@ void APlayerCharacter::AttackReKey()
 				{
 					m_AnimInstance->Montage_SetPosition(m_BowMontageArray[2], 0.f);
 					m_AnimInstance->Montage_Play(m_BowMontageArray[2]);
-					ABow* Bow = Cast<ABow>(m_Weapon);
+					ASpawnBow* Bow = Cast<ASpawnBow>(m_Weapon);
 					if (Bow)
 					{
 						Bow->ArrowShot(m_AnimInstance->GetBowAimAlpha(), ArrowTransform());
@@ -759,8 +700,10 @@ void APlayerCharacter::RequestBuild()
 
 void APlayerCharacter::ToggleBuildMode()
 {
+
 	if (m_UseInvenNum>=0 && m_UseInvenNum < m_UseInven.Num() && m_UseInven[m_UseInvenNum])
 	{
+	
 		if (m_UseInven[m_UseInvenNum]->GetItemType() == EItemType::BuildItem) {
 				BuildManager->ToggleBuildMode();
 
@@ -933,6 +876,55 @@ void APlayerCharacter::sixKey()
 	ItemUse(6);
 }
 
+void APlayerCharacter::Save()
+{
+	APPGameStateBase* GameState = Cast<APPGameStateBase>(UGameplayStatics::GetGameState(GetWorld()));
+	if (!GameState)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SaveWorldTest] GameState is null"));
+		return;
+	}
+
+	AChunkManager* ChunkManager = GameState->GetChunkManager();
+	if (!ChunkManager)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SaveWorldTest] ChunkManager is null"));
+		return;
+	}
+
+	ChunkManager->SaveWorld();
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, TEXT("SaveWorldFull called"));
+	}
+}
+
+void APlayerCharacter::Load()
+{
+	APPGameStateBase* GameState = Cast<APPGameStateBase>(UGameplayStatics::GetGameState(GetWorld()));
+	if (!GameState)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[LoadWorldTest] GameState is null"));
+		return;
+	}
+
+	AChunkManager* ChunkManager = GameState->GetChunkManager();
+	if (!ChunkManager)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[LoadWorldTest] ChunkManager is null"));
+		return;
+	}
+
+	ChunkManager->LoadWorld();
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, TEXT("LoadWorld called"));
+	}
+}
+
+
 void APlayerCharacter::ItemUse(int32 _UseNum)
 {
 	int32 UseitemNum = _UseNum - 1;
@@ -957,8 +949,9 @@ void APlayerCharacter::ItemUse(int32 _UseNum)
 				m_MainHUD->GetUseInventory()->UseOn(m_UseInvenNum, false);
 				if (m_UseInven[m_UseInvenNum]->GetItemType() == EItemType::BuildItem)
 				{	
-					if(BuildManager->GetBuilding())
+					if (BuildManager->GetBuilding() && m_UseInven[UseitemNum]->GetItemType() != EItemType::BuildItem) {
 						ToggleBuildMode();
+					}
 				}
 			}
 			
@@ -1009,7 +1002,7 @@ void APlayerCharacter::WeapomSetSocket(const FString& Path)
 }
 
 
-void APlayerCharacter::SetWeapon(AWeapon* _Weapon)
+void APlayerCharacter::SetWeapon(ASpawnWeapon* _Weapon)
 {
 	 m_Weapon = _Weapon; m_AnimInstance->SetWeapon(_Weapon); 
 }
@@ -1028,7 +1021,7 @@ void APlayerCharacter::SetCrosshair()
 	
 }
 
-void APlayerCharacter::SetInvenItem(AUseItem* _Item, int32 _Num)
+void APlayerCharacter::SetInvenItem(UUseItem* _Item, int32 _Num)
 {
 	if (m_UseInven[_Num])
 	{
@@ -1054,15 +1047,12 @@ void APlayerCharacter::SetInvenItem(AUseItem* _Item, int32 _Num)
 			m_EatItemOn = false;
 		}
 		
-		
-		
-		m_UseInven[_Num]->Destroy();
 		m_UseInven[_Num] = _Item;
 	}
 	else
 	{
 		m_UseInven[_Num] = _Item;
-		m_UseInven[_Num]->SetOwner(this);
+		m_UseInven[_Num]->SetPlayerOwner(this);
 	}
 	
 
@@ -1163,9 +1153,6 @@ UPlayerAnim* APlayerCharacter::GetPlayerAnim() {
 
 void APlayerCharacter::NormalAttack() {
 	
-
-	
-
 	FCollisionQueryParams	params(NAME_None, false, this);
 	// 근접공격으로 이 타이밍에 충돌처리를 해주도록 한다.
 	
@@ -1211,14 +1198,41 @@ void APlayerCharacter::NormalAttack() {
 				
 				if (result.Actor.IsValid())
 				{
-					
-					FDamageEvent DamageEvent;
-					if (result.Actor->IsA(ABuildable::StaticClass()))
+				
+					UInstancedStaticMeshComponent* HitHISM = Cast<UInstancedStaticMeshComponent>(result.Component);
+					AChunkActor* HitChunk = Cast<AChunkActor>(result.GetActor());
+					if (IsValid(HitHISM) && IsValid(HitChunk)) {
+						UStaticMesh* HitMesh = HitHISM->GetStaticMesh();
+						int32 HitIndex = result.Item;
+						int32 TargetID = HitChunk->GetMeshID(HitHISM, HitIndex);
+						if (TargetID != -1 && TargetID < 1000000)
+						{
+
+							AChunkManager* ChunkManager = Cast<APPGameStateBase>(UGameplayStatics::GetGameState(GetWorld()))->GetChunkManager();
+							if (!ChunkManager->FindBuildMapNode(TargetID))
+								return;
+
+							ChunkManager->DamageBuilding(TargetID, m_Weapon->GetBuildAttack());
+							/*
+							FBuildingNode& TargetNode = ChunkManager->GetBuildMapNode(TargetID);
+							TargetNode.Durability -= ;
+
+							if (TargetNode.Durability <= 0) {
+								TargetNode.Durability = 0;
+								ChunkManager->DestroyBuilding(TargetID);
+							}
+							*/
+						}
+					}
+					else if (result.Actor->IsA(ABuildable::StaticClass()))
 					{
+						FDamageEvent DamageEvent;
+
 						result.Actor->TakeDamage((float)m_Weapon->GetBuildAttack(), DamageEvent, GetController(), this);
 					}
 					else
 					{
+						FDamageEvent DamageEvent;
 						result.Actor->TakeDamage((float)m_Weapon->GetAttack(), DamageEvent, GetController(), this);
 						//PrintViewport(1.f, FColor::Red, FString::Printf(TEXT("ddd")));
 
@@ -1265,13 +1279,39 @@ void APlayerCharacter::NormalAttack() {
 		if (Sweep)
 		{
 			for (auto& result : HitResultArray) {
-				if (result.Actor->IsA(AEnvironments::StaticClass()))
-				{
-					AEnvironments* Act = Cast<AEnvironments>(result.Actor);
-					if (Act->GetEnvironmentsType() == EnvironmentsType::Stone)
+
+				UInstancedStaticMeshComponent* HitHISM = Cast<UInstancedStaticMeshComponent>(result.Component);
+				AChunkActor* HitChunk = Cast<AChunkActor>(result.GetActor());
+				
+				if (IsValid(HitHISM) && IsValid(HitChunk)) {
+					UStaticMesh* HitMesh = HitHISM->GetStaticMesh();
+					int32 HitIndex = result.Item;
+					int32 TargetID = HitChunk->GetMeshID(HitHISM, HitIndex);
+					
+					if (TargetID != -1 && TargetID < 1000000)
 					{
-						Act->Attacked();
+
+						AChunkManager* ChunkManager = Cast<APPGameStateBase>(UGameplayStatics::GetGameState(GetWorld()))->GetChunkManager();
+						if (!ChunkManager->FindBuildMapNode(TargetID))
+							return;
+
+						ChunkManager->DamageBuilding(TargetID, m_Weapon->GetBuildAttack());
+						
 					}
+					else if (TargetID >= 1000000) {
+						AChunkManager* ChunkManager = Cast<APPGameStateBase>(UGameplayStatics::GetGameState(GetWorld()))->GetChunkManager();
+						if (!ChunkManager->FindResourceMapNode(TargetID))
+							return;
+						ChunkManager->DamageResource(TargetID, 1);
+					}
+				}
+				else if (result.Actor->IsA(AEnvironments::StaticClass()))
+				{
+					//AEnvironments* Act = Cast<AEnvironments>(result.Actor);
+					//if (Act->GetEnvironmentsType() == EnvironmentsType::Stone)
+					//{
+					//	Act->Attacked();
+					//}
 				}
 				else if (result.Actor.IsValid())
 				{
@@ -1324,13 +1364,40 @@ void APlayerCharacter::NormalAttack() {
 		if (Sweep)
 		{
 			for (auto& result : HitResultArray) {
-				if (result.Actor->IsA(AEnvironments::StaticClass()))
+
+				UInstancedStaticMeshComponent* HitHISM = Cast<UInstancedStaticMeshComponent>(result.Component);
+				AChunkActor* HitChunk = Cast<AChunkActor>(result.GetActor());
+
+				if (IsValid(HitHISM) && IsValid(HitChunk)) {
+					UStaticMesh* HitMesh = HitHISM->GetStaticMesh();
+					int32 HitIndex = result.Item;
+					int32 TargetID = HitChunk->GetMeshID(HitHISM, HitIndex);
+					//PrintViewport(1.f, FColor::Red, FString::Printf(TEXT("1")));
+					if (TargetID != -1 && TargetID < 1000000)
+					{
+
+						AChunkManager* ChunkManager = Cast<APPGameStateBase>(UGameplayStatics::GetGameState(GetWorld()))->GetChunkManager();
+						if (!ChunkManager->FindBuildMapNode(TargetID))
+							return;
+						ChunkManager->DamageBuilding(TargetID, m_Weapon->GetBuildAttack());
+						
+					}
+					else if (TargetID >= 1000000) {
+						//PrintViewport(1.f, FColor::Red, FString::Printf(TEXT("2")));
+						AChunkManager* ChunkManager = Cast<APPGameStateBase>(UGameplayStatics::GetGameState(GetWorld()))->GetChunkManager();
+						if (!ChunkManager->FindResourceMapNode(TargetID))
+							return;
+						ChunkManager->DamageResource(TargetID, 1);
+
+					}
+				}
+				else if (result.Actor->IsA(AEnvironments::StaticClass()))
 				{
 					AEnvironments* Act = Cast<AEnvironments>(result.Actor);
-					if (Act->GetEnvironmentsType() == EnvironmentsType::Wood)
-					{
-						Act->Attacked();
-					}
+					//if (Act->GetEnvironmentsType() == EnvironmentsType::Wood)
+					//{
+						//Act->Attacked();
+					//}
 				}
 				else if (result.Actor.IsValid())
 				{
@@ -1382,7 +1449,7 @@ void APlayerCharacter::PlayerCheckEndOverlap()
 	m_MainHUD->GetHotKey()->SetVisibility(ESlateVisibility::Collapsed);
 	if (m_NameDelegate.IsBound())
 		m_NameDelegate.Unbind();
-	m_CheckedBuild = nullptr;
+	CurrentBuildID = -1;
 	m_BuildUpgradeNum = -1;
 }
 
@@ -1433,30 +1500,14 @@ void APlayerCharacter::Upgrade()
 {
 	if (m_BuildUpgradeNum == -1)
 		return;
+	if (CurrentBuildID < 0)
+		return;
 	UTileView* Inven = m_MainHUD->GetInventory()->GetInventorySlot();
 	UInventoryItemDataTile* Item = Cast<UInventoryItemDataTile>(Inven->GetItemAt(m_BuildUpgradeNum));
-
-	
+	AChunkManager* ChunkManager = Cast<APPGameStateBase>(UGameplayStatics::GetGameState(GetWorld()))->GetChunkManager();
+	bool Upgraded= ChunkManager->UpgradeBuildingDefinitionName(CurrentBuildID, BuildName);
+	if (!Upgraded)return;
 	Item->SetAMount(Item->GetAMount() - 1);
-
-	m_CheckedBuild->SetMesh(m_BuildUpgradeInfo->DestructibleMesh, m_BuildUpgradeInfo->Mesh);
-	for (int32 i = 0; i < m_BuildUpgradeInfo->OptionArray.Num(); i++) {
-		if (m_BuildUpgradeInfo->OptionArray[i].OptionType == EItemOption::Durability)
-		{
-			m_CheckedBuild->SetMaxDurability(m_BuildUpgradeInfo->OptionArray[i].Option);
-			m_CheckedBuild->SetDurability(m_BuildUpgradeInfo->OptionArray[i].Option);
-			switch (m_BuildUpgradeInfo->OptionArray[i].Option)
-			{
-			case 1000: m_CheckedBuild->SetMaterialType(EnvironmentsType::Wood);
-				break;
-			case 2000: m_CheckedBuild->SetMaterialType(EnvironmentsType::Stone);
-				break;
-			case 3000: m_CheckedBuild->SetMaterialType(EnvironmentsType::Metal);
-				break;
-			}
-		}
-	}
-
 	if (Item->GetAMount() <= 0)
 	{
 
@@ -1468,13 +1519,98 @@ void APlayerCharacter::Upgrade()
 		Item->SetItemIndex(0);
 		m_MainHUD->GetInventory()->SetUseSlot(Item->GetIndex(), true);
 	}
+	
 	Inven->RegenerateAllEntries();
 
-	m_CheckedBuild = nullptr;
+	ClearUpgradeState();
+	
+}
+
+void APlayerCharacter::ClearUpgradeState()
+{
+	BuildName.Empty();
+	m_BuildUpgradeInfo = nullptr;
 	m_BuildUpgradeNum = -1;
 	m_MainHUD->GetHotKey()->SetVisibility(ESlateVisibility::Collapsed);
+
 	if (m_NameDelegate.IsBound())
 		m_NameDelegate.Unbind();
-	
-	
+}
+
+void APlayerCharacter::SetGifTopView(bool bEnable)
+{
+	if (!m_Arm || !m_Camera)
+	{
+		return;
+	}
+
+	if (bEnable == bGifTopView)
+	{
+		return;
+	}
+
+	bGifTopView = bEnable;
+
+	if (bGifTopView)
+	{
+		// 기존 카메라 상태 저장
+		SavedArmLength = m_Arm->TargetArmLength;
+		SavedCameraFOV = m_Camera->FieldOfView;
+
+		SavedArmRelativeRotation = m_Arm->GetRelativeRotation();
+		SavedCameraRelativeRotation = m_Camera->GetRelativeRotation();
+
+		SavedArmSocketOffset = m_Arm->SocketOffset;
+		SavedArmTargetOffset = m_Arm->TargetOffset;
+
+		bSavedArmUsePawnControlRotation = m_Arm->bUsePawnControlRotation;
+		bSavedArmAbsoluteRotation = m_Arm->IsUsingAbsoluteRotation();
+
+		// GIF 촬영용 탑뷰 세팅
+		m_Arm->bUsePawnControlRotation = false;
+
+		// 캐릭터 회전이나 애니메이션에 카메라가 같이 돌아가지 않도록 월드 회전 고정
+		m_Arm->SetUsingAbsoluteRotation(true);
+
+		m_Arm->TargetArmLength = GifTopViewArmLength;
+		m_Arm->SocketOffset = FVector::ZeroVector;
+		m_Arm->TargetOffset = FVector::ZeroVector;
+
+		// 완전 탑뷰. 살짝 사선으로 보고 싶으면 -75.f 정도로 바꾸면 됨.
+		m_Arm->SetWorldRotation(FRotator(GifTopViewPitch, 0.f, 0.f));
+
+		m_Camera->SetRelativeRotation(FRotator::ZeroRotator);
+		m_Camera->SetFieldOfView(GifTopViewFOV);
+
+		UE_LOG(LogTemp, Log, TEXT("[GifCamera] TopView ON"));
+	}
+	else
+	{
+		// 기존 카메라 상태 복구
+		m_Arm->SetUsingAbsoluteRotation(bSavedArmAbsoluteRotation);
+		m_Arm->bUsePawnControlRotation = bSavedArmUsePawnControlRotation;
+
+		m_Arm->TargetArmLength = SavedArmLength;
+		m_Arm->SocketOffset = SavedArmSocketOffset;
+		m_Arm->TargetOffset = SavedArmTargetOffset;
+
+		m_Arm->SetRelativeRotation(SavedArmRelativeRotation);
+		m_Camera->SetRelativeRotation(SavedCameraRelativeRotation);
+		m_Camera->SetFieldOfView(SavedCameraFOV);
+
+		UE_LOG(LogTemp, Log, TEXT("[GifCamera] TopView OFF"));
+	}
+}
+
+void APlayerCharacter::ToggleGifTopView()
+{
+	SetGifTopView(!bGifTopView);
+}
+
+void APlayerCharacter::CheckUpdateOverlaps()
+{
+	if (!IsValid(m_PlayerCheckCollsionActor))
+		return;
+
+	m_PlayerCheckCollsionActor->BoxUpdateOverlaps();
 }

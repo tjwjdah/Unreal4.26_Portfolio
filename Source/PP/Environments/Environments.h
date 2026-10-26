@@ -26,15 +26,11 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		int32 m_Hp;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		EnvironmentsType Type;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		TSubclassOf <AItemBox> m_DropItem;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		EnvironmentsType m_Type;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		TArray<FDropItem> m_DropItems;
+		FString DropInfoString;
 
 protected:
 	// Called when the game starts or when spawned
@@ -51,7 +47,17 @@ public:
 		m_Mesh->SetStaticMesh(Mesh);
 	}
 
+	UStaticMesh* GetMesh() {
+		return m_Mesh->GetStaticMesh();
+	}
+
+	
+	int32 GetHP() {
+		return m_Hp;
+	}
+	
+	EnvironmentsType GetType() { return Type; }
+	FString GetDropInfoString(){return DropInfoString;}
 	virtual void Attacked();
 
-	EnvironmentsType GetEnvironmentsType() { return m_Type; }
 };

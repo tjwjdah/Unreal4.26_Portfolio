@@ -36,7 +36,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		ULevelSequence* m_SequenceAsset;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	ULevelSequencePlayer* m_SequencePlayer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	ALevelSequenceActor* m_SequenceActor;
 
 

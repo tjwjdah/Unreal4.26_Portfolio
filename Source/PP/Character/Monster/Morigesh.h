@@ -25,11 +25,11 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	TArray<class AZoobie*> m_SummonsZoobies;
 		
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class ANormalEffect* m_Circle;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class UMorigeshAnim* m_MorigeshAnim;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class AMorigeshExplosion* m_Explosion;
 
 	bool  m_SummonsZobiesCheck;
@@ -40,6 +40,7 @@ private:
 
 
 	bool m_ShieldOn;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class AShield* m_Shield;
 
 protected:

@@ -39,6 +39,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	TArray<FBoxItems>		m_ItemNames;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class UItemBoxAnim* m_ItemBoxAnim;
 
 	float	    m_DestroyTime;

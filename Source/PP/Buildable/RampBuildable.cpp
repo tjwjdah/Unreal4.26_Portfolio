@@ -3,10 +3,17 @@
 
 #include "RampBuildable.h"
 #include "FoundationBuildable.h"
+#include "../Chunk/ChunkManager.h"
+#include "../PPGameStateBase.h"
 ARampBuildable::ARampBuildable() {
 	PrimaryActorTick.bCanEverTick = true;
 
-	
+	/*BuildableSocketNames.Add(TEXT("RampSocket1"));
+	BuildableSocketNames.Add(TEXT("RampSocket2"));
+	BuildableSocketNames.Add(TEXT("RampSocket3"));
+	BuildableSocketNames.Add(TEXT("RampSocket4"));
+	*/
+	//CheckAddSocketType.Add(EBuildType::Foundation);
 }
 
 void ARampBuildable::BeginPlay()
@@ -22,9 +29,9 @@ void ARampBuildable::Tick(float DeltaTime)
 void ARampBuildable::Build()
 {
 	Super::Build();
-	//CollisionVolume->SetCollisionProfileName(TEXT("PlayerIgnore"));
+	
 }
-
+/*
 void ARampBuildable::BuildChecking(FVector Location)
 {
 
@@ -105,3 +112,4 @@ void ARampBuildable::BuildChecking(FVector Location)
 	SetActorRotation(ResultRotator);
 	Super::BuildChecking(ResultLocation);
 }
+*/

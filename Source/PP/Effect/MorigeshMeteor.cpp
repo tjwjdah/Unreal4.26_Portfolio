@@ -3,6 +3,7 @@
 
 #include "MorigeshMeteor.h"
 #include "NormalEffect.h"
+#include "../Character/Player/PlayerCharacter.h"
 #include "../Character/Monster/Morigesh.h"
 
 AMorigeshMeteor::AMorigeshMeteor() {
@@ -48,7 +49,8 @@ void AMorigeshMeteor::StopEvent(const FHitResult& result)
 {
 	Super::StopEvent(result);
 	
-	if (TEXT("BPPlayerCharacter_C") == result.Actor->GetClass()->GetName())
+		//TEXT("BPPlayerCharacter_C") == result.Actor->GetClass()->GetName()
+	if (result.Actor->IsA(APlayerCharacter::StaticClass()))
 	{
 
 		if (IsValid(m_Owner))

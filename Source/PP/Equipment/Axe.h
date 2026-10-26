@@ -10,14 +10,14 @@
  * 
  */
 UCLASS()
-class PP_API AAxe : public AWeapon
+class PP_API UAxe : public UWeapon
 {
 	GENERATED_BODY()
 public:
-	AAxe();
+	UAxe();
 private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		USkeletalMeshComponent* m_Mesh;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		//USkeletalMeshComponent* m_Mesh;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		USkeletalMesh* m_SkeletalMesh;
 public:

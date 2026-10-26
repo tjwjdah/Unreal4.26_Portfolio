@@ -3,8 +3,8 @@
 
 #include "PlayerAnim.h"
 #include "PlayerCharacter.h"
-#include "../../Equipment/Bow.h"
-#include "../../Equipment/Weapon.h"
+#include "../../Equipment/SpawnBow.h"
+#include "../../Equipment/SpawnWeapon.h"
 UPlayerAnim::UPlayerAnim()
 {
     //Tool_Idle_Pose ¼¼ÆÃ
@@ -70,7 +70,7 @@ void UPlayerAnim::AnimNotify_DisarmBow()
 {
     APlayerCharacter* Player = Cast<APlayerCharacter>(TryGetPawnOwner());
 
-    ABow* Bow = Cast<ABow>(Player->GetWeapon());
+    ASpawnBow* Bow = Cast<ASpawnBow>(Player->GetWeapon());
     Bow->ArrowVisibility(false);
     Player->WeapomSetSocket("bow");
 
@@ -83,7 +83,7 @@ void UPlayerAnim::AnimNotify_DrawoBow()
 
     APlayerCharacter* Player = Cast<APlayerCharacter>(TryGetPawnOwner());
 
-    ABow* Bow = Cast<ABow>(Player->GetWeapon());
+    ASpawnBow* Bow = Cast<ASpawnBow>(Player->GetWeapon());
     Bow->ArrowVisibility(true);
     Player->WeapomSetSocket("bow_use");
 }
@@ -95,10 +95,9 @@ void UPlayerAnim::AnimNotify_Attack()
     if (Player)
         Player->NormalAttack();
 }
-void UPlayerAnim::SetWeapon(AWeapon* _Active_Weapon){
+void UPlayerAnim::SetWeapon(ASpawnWeapon* _Active_Weapon){
 
  
-    
     Active_Weapon = _Active_Weapon;
     if (_Active_Weapon)
     {

@@ -10,14 +10,14 @@
  * 
  */
 UCLASS()
-class PP_API APick : public AWeapon
+class PP_API UPick : public UWeapon
 {
 	GENERATED_BODY()
 public:
-	APick();
+	UPick();
 private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		USkeletalMeshComponent* m_Mesh;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	//	USkeletalMeshComponent* m_Mesh;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	USkeletalMesh* m_SkeletalMesh;
 public:

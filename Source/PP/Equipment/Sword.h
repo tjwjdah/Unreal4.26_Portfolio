@@ -10,20 +10,20 @@
  * 
  */
 UCLASS()
-class PP_API ASword : public AWeapon
+class PP_API USword : public UWeapon
 {
 	GENERATED_BODY()
 public:
-	ASword();
+	USword();
 private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		USkeletalMeshComponent* m_Mesh;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	//	USkeletalMeshComponent* m_Mesh;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		USkeletalMesh* m_SkeletalMesh;
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		UBoxComponent* CollisionVolume;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		//UBoxComponent* CollisionVolume;
 public:
 	virtual void Use();
 	virtual void SetMesh(USkeletalMesh* _Mesh);

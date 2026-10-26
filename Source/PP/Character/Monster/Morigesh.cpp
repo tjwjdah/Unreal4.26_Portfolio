@@ -234,7 +234,7 @@ void AMorigesh::SummonsExplosion()
 
 	m_Explosion = Bullet;
 	Bullet->SetAttack(m_MonsterInfo.Attack * m_MonsterInfo.AttackInfos[GetAttackType()].Attackdiameter);
-	Bullet->SetOwner(this);
+	Bullet->SetMonsterOwner(this);
 	Bullet->SetPlayer(m_AttackPlayer);
 
 }
@@ -273,7 +273,7 @@ void AMorigesh::SummonsMeteor()
 	
 
 	Bullet->SetAttack(m_MonsterInfo.Attack * m_MonsterInfo.AttackInfos[GetAttackType()].Attackdiameter);
-	Bullet->SetOwner(this);
+	Bullet->SetMonsterOwner(this);
 	
 }
 
@@ -341,7 +341,7 @@ void AMorigesh::DaggerAttack()
 		param);
 
 	Bullet->SetAttack(m_MonsterInfo.Attack * m_MonsterInfo.AttackInfos[GetAttackType()].Attackdiameter);
-	Bullet->SetOwner(this);
+	Bullet->SetMonsterOwner(this);
 	
 }
 

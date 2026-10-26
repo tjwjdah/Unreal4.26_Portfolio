@@ -22,6 +22,7 @@ private:
 	FString m_Name;
 	int32 m_Index;
 	FLinearColor m_Color;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class UQuestListItemWidget* m_OwnerWidget;
 public:
 	void SetIndex(int32 Index) {

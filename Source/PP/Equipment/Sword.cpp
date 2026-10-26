@@ -1,36 +1,35 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Sword.h"
-
+#include "SpawnWeapon.h"
 #include "../Character/Player/PlayerCharacter.h"
 #include "../Character/Player/PlayerAnim.h"
-ASword::ASword() {
-	m_Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+USword::USword() {
 
-	
-	m_Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	m_Type = EWeaponType::Sword;
 
-	CollisionVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionVolume"));
-	CollisionVolume->SetupAttachment(RootComponent);
-	SetRootComponent(CollisionVolume);
-	m_Mesh->SetupAttachment(RootComponent);
+	//CollisionVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionVolume"));
+	//CollisionVolume->SetupAttachment(RootComponent);
+	//SetRootComponent(CollisionVolume);
+	//m_Mesh->SetupAttachment(RootComponent);
 	//SetActorLocationAndRotation(FVector(-8.274286f, 3.027441f, -1.138027f), FRotator(-167.317169f, 153.722229f, 5.770499f));
 }
-void ASword::Use()
+void USword::Use()
 {
 	FActorSpawnParameters	param;
 	param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	ASword* Sword = GetWorld()->SpawnActor<ASword>(GetClass(),
+	ASpawnWeapon* Sword = GetWorld()->SpawnActor<ASpawnWeapon>(ASpawnWeapon::StaticClass(),
 		FVector::ZeroVector, FRotator::ZeroRotator,
 		param);
-	//Bow->SetMesh()
 	
-	Sword->AttachToComponent(m_Owner->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform,
+	Sword->GetSkeletalMeshComponent()->AttachToComponent(m_Owner->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform,
 		TEXT("Tool"));
+	Sword->SetPlayerOwner(m_Owner);
 	Sword->SetAttack(m_Attack);
-	Sword->m_Mesh->SetSkeletalMesh(m_SkeletalMesh);
+	Sword->SetMesh(m_SkeletalMesh);
 	Sword->SetBuildAttack(m_BuildAttack);
+	Sword->SetWeaponType(m_Type);
+	//Sword->SetActorLocationAndRotation(FVector(-8.274286f, 3.027441f, -1.138027f), FRotator(-167.317169f, 153.722229f, 5.770499f));
 	//Bow->SetMesh(TEXT("SkeletalMesh'/Game/DynamicCombatSystem/Meshes/SK_ElvenBow.SK_ElvenBow'"));
 
 	
@@ -42,7 +41,7 @@ void ASword::Use()
 	m_Owner->GetPlayerAnim()->SetWeaponOnOff(true);
 }
 
-void ASword::SetMesh(USkeletalMesh* _Mesh)
+void USword::SetMesh(USkeletalMesh* _Mesh)
 {
 	m_SkeletalMesh = _Mesh;
 }

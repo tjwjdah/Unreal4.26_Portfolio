@@ -142,17 +142,20 @@ void USelectedBlueprintInfo::Craft()
 	for (int32 i = 0; i < m_RequiredItemsBox->GetChildrenCount(); i++)
 	{
 		UItem* CraftItem = Cast<UItem>(m_RequiredItemsBox->GetChildAt(i));
-		
+		bool CraftCheck = false;
 		for (int32 l = 0; l < 20; l++)
 		{
 			UInventoryItemDataTile* InvenItem = Cast<UInventoryItemDataTile>(Inven->GetItemAt(l));
 			if (InvenItem->GetNameText() == CraftItem->GetItemName())
 			{
-				if (InvenItem->GetAMount() < CraftItem->GetBaseCraftingAmount() * m_MakeAmount)
-					m_CraftCheck = false;
+				if (InvenItem->GetAMount() >= CraftItem->GetBaseCraftingAmount() * m_MakeAmount)
+					CraftCheck = true;;
 			}
-			//m_RequiredItemsBox
 		}	
+		if (!CraftCheck) {
+			m_CraftCheck = false;
+			break;
+		}
 	}
 	if (!m_CraftCheck)
 		return;

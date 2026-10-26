@@ -7,7 +7,8 @@
 #include "WindowBuildable.h"
 #include "CeilingBuildable.h"
 #include "OpenDoorBuildable.h"
-
+#include "../Chunk/ChunkManager.h"
+#include "../PPGameStateBase.h"
 #include "../PPGameInstance.h"
 #include "../PPGameModeBase.h"
 #include "../Character/Player/PlayerCharacter.h"
@@ -52,6 +53,18 @@ ADoorBuildable::ADoorBuildable() {
 	DoorSocket->SetupAttachment(DoorAxis);
 
 	m_Open = false;
+	/*
+	BuildableSocketNames.Add(TEXT("WallSocket1"));
+	BuildableSocketNames.Add(TEXT("WallSocket2"));
+	BuildableSocketNames.Add(TEXT("WallSocket3"));
+	BuildableSocketNames.Add(TEXT("WallSocket4"));
+	
+	CheckAddSocketType.Add(EBuildType::Wall);
+	CheckAddSocketType.Add(EBuildType::DoorFrame);
+	CheckAddSocketType.Add(EBuildType::WindowFrame);
+	CheckAddSocketType.Add(EBuildType::Ceiling);
+	CheckAddSocketType.Add(EBuildType::Foundation);
+	*/
 }
 
 void ADoorBuildable::BeginPlay()
@@ -87,6 +100,10 @@ void ADoorBuildable::Tick(float DeltaTime)
 void ADoorBuildable::Build()
 {
 	Super::Build();
+
+
+
+	/*
 	//CollisionVolume->SetCollisionProfileName(TEXT("PlayerIgnore"));
 
 	TArray<FHitResult>	resultArray;
@@ -133,8 +150,9 @@ void ADoorBuildable::Build()
 			}
 		}
 	}
+	*/
 }
-
+/*
 void ADoorBuildable::BuildChecking(FVector Location)
 {
 	ResultLocation = Location;
@@ -247,7 +265,7 @@ void ADoorBuildable::BuildChecking(FVector Location)
 	SetActorRotation(ResultRotator);
 	Super::BuildChecking(ResultLocation);
 }
-
+*/
 
 void ADoorBuildable::BuildDestroy() {
 	Super::BuildDestroy();

@@ -12,25 +12,22 @@
 
 
 UCLASS()
-class PP_API AEatItem : public AUseItem
+class PP_API UEatItem : public UUseItem
 {
 	GENERATED_BODY()
 
 public:
-	AEatItem();
+	UEatItem();
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		TArray<FItemOption>	m_ItemOptions;
 		
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
 
 public:
 	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 	virtual void Use();
-
 	void SetOptions(FItemOption _Option) {
 		m_ItemOptions.Add(_Option);
 	}

@@ -10,11 +10,11 @@
  * 
  */
 UCLASS()
-class PP_API AGarment : public AEquipment
+class PP_API UGarment : public UEquipment
 {
 	GENERATED_BODY()
 public:
-	AGarment();
+	UGarment();
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
@@ -23,8 +23,7 @@ protected:
 		USkeletalMesh* m_SkeletalMesh;
 protected:
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
+	
 public:
 	virtual void SetMesh(USkeletalMesh* _Mesh) { m_SkeletalMesh = _Mesh; }
 

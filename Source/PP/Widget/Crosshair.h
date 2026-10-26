@@ -22,7 +22,7 @@ protected:
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		UImage* m_CrosshairImage;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UCanvasPanelSlot* PanelSlot;
 
 	FVector2D ScreenPosition;

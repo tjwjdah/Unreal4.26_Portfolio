@@ -18,7 +18,7 @@ public:
 	AMagicCircle();
 
 protected:
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UMaterialInstanceDynamic* m_Material;
 	float		m_Glow;
 	float		m_Dir;

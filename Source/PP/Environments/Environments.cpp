@@ -10,18 +10,26 @@ AEnvironments::AEnvironments()
 	m_Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 
 	SetRootComponent(m_Box);
-	static ConstructorHelpers::FClassFinder<AItemBox>	ItemBox(TEXT("Blueprint'/Game/Item/DropItem/BP_Box.BP_Box_C'"));
-	if (ItemBox.Succeeded())
-		m_DropItem = ItemBox.Class;
+	//static ConstructorHelpers::FClassFinder<AItemBox>	ItemBox(TEXT("Blueprint'/Game/Item/DropItem/BP_Box.BP_Box_C'"));
+	//if (ItemBox.Succeeded())
+		//m_DropItem = ItemBox.Class;
 	m_Mesh->SetupAttachment(m_Box);
 	m_Hp = 3;
+
+
 	
 }
 
 void AEnvironments::BeginPlay()
 {
 	Super::BeginPlay();
-
+	SetActorScale3D(m_Mesh->GetComponentScale());
+	m_Mesh->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
+	FVector Loc = m_Box->GetComponentLocation()+ m_Mesh->GetRelativeLocation();
+	
+	m_Mesh->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
+	SetActorLocation(Loc);
+	
 }
 
 // Called every frame
@@ -32,6 +40,7 @@ void AEnvironments::Tick(float DeltaTime)
 }
 
 void AEnvironments::Attacked() {
+	/*
 	m_Hp--;
 	if (m_Hp == 0)
 	{
@@ -55,7 +64,7 @@ void AEnvironments::Attacked() {
 		//생성한 아이템 박스에 드랍할 아이템 넣어줌
 		Destroy();
 	}
-	
+	*/
 }
 
 

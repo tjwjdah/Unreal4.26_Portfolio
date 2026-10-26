@@ -19,10 +19,13 @@ public:
 
 private:
 	int32	m_Attack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class AMonster* m_Owner;
+
 	FVector m_TargetVector;
 	FRotator m_Velocity;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	AActor* m_DecalEffect;
 
 	float	m_Start;
@@ -32,7 +35,7 @@ public:
 		m_Attack = Attack;
 	}
 
-	void SetOwner(class AMonster* Monster)
+	void SetMonsterOwner(class AMonster* Monster)
 	{
 
 		m_Owner = Monster;

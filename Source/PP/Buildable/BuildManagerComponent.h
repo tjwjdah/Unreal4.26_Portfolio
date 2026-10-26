@@ -3,10 +3,10 @@
 #pragma once
 
 #include "../GameInfo.h"
+#include "../Chunk/ChunkManager.h"
+#include "../AssetManager/BuildAssetSubsystem.h"
 #include "Components/ActorComponent.h"
 #include "BuildManagerComponent.generated.h"
-
-
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PP_API UBuildManagerComponent : public UActorComponent
@@ -17,47 +17,47 @@ public:
 	// Sets default values for this component's properties
 	UBuildManagerComponent();
 
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
-
-
-	UFUNCTION(BlueprintCallable)
-	void ToggleBuildMode();
-	UFUNCTION(BlueprintCallable)
-	bool RequestBuild();
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Building)
-		FVector GridSize;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Building)
-		float BuildDistance;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Building)
-		float FloorHeight;
-
 	
+
 	
 private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		FVector GridSize;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		float BuildDistance;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		float FloorHeight;
 	bool IsBuilding;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class APlayerCharacter* m_Player;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* PlayerCamera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* PlayerArm;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class ABuildable* CurrentBuild;
 
-	EBuildType       m_BuildType;
-	TArray<class ABuildable*> BuildiObject;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		FString BuildDefinitionName;
 
-	UDestructibleMesh* DestructibleMesh;
-	UStaticMesh*		 StaticMesh;
+	const FBuildDefinitionInfo* BuildDefinitionInfo = nullptr;
 
-	int32                    Durability;
-	int32                    MaxDurability;
-	EnvironmentsType		MaterialType;
+	UPROPERTY(Transient)
+		FBuildAssets CurrentAssets;
+
+	bool bPreviewAssetsReady = false;
+
+	bool bOverlapCheck;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
+	// Called every frame
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 private:
 	FVector GetMousePickingLocation();
 	FVector GetGridLocation(FVector MouseLocation);
@@ -67,13 +67,20 @@ private:
 public:
 	class ABuildable* GetCurrentBuild();
 	bool GetBuilding() { return IsBuilding; }
-	void SetBuildType(EBuildType _BuildType) { m_BuildType = _BuildType; }
-	void SetDurability(int32 _Durability) { Durability = _Durability; }
-	void SetMaxDurability(int32 _Durability) { Durability = _Durability; }
-	void SetMesh(UDestructibleMesh* _DestructibleMesh, UStaticMesh* _StaticMesh) {
-		DestructibleMesh = _DestructibleMesh;  StaticMesh = _StaticMesh;
-	}
+	
+	void SetBuildData(FString Name);
 
-	void SetMaterialType(EnvironmentsType _MaterialType) { MaterialType = _MaterialType; }
+	void BuilingDestroy();
+	
 	void SetPlayer(APlayerCharacter* _Player);
+
+	void Building();
+	bool OverlapCheckCanBuild();
+	class UStaticMeshSocket* FindClosestSocket(const FBuildingNode& Node, FVector Location);
+
+
+	UFUNCTION(BlueprintCallable)
+		void ToggleBuildMode();
+	UFUNCTION(BlueprintCallable)
+		bool RequestBuild();
 };

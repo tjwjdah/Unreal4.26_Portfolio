@@ -1,3 +1,4 @@
+#pragma once
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
@@ -32,11 +33,11 @@ private:
 	
 	
 	bool			   m_BuildableCheck;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class UPlayerAnim* m_AnimInstance;
 	
 	int32  BuildRotAmount;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	USkeletalMesh* m_PlayerMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
@@ -47,6 +48,10 @@ private:
 		USkeletalMeshComponent* m_GarmentMesh;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		USkeletalMesh* m_GarmentSkeletalMesh;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		class APlayerCheckCollsionActor* m_PlayerCheckCollsionActor;
 	
 	bool m_GarmentOnOff;
 	int  m_GarmentArmor;
@@ -83,7 +88,7 @@ private:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		class AWeapon* m_Weapon;
+		class ASpawnWeapon* m_Weapon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Category = Weapon)
 		bool m_WeaponOn;
@@ -105,7 +110,7 @@ private:
 		UAnimMontage*	m_PickMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		TArray<AUseItem*> m_UseInven;
+		TArray<UUseItem*> m_UseInven;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		int32 m_UseInvenNum;
@@ -114,7 +119,8 @@ private:
 		TArray<UAnimMontage*>	m_AttackMontageArray;
 	FNameDelegate	m_NameDelegate;
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		FString BuildName;
 	int32 m_Hp;
 	int32 m_PreHp;
 
@@ -130,11 +136,14 @@ private:
 	float m_PreThirst;
 	float m_ThirstTick;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class  UCharacterState* m_StateBar;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class  UMainHUD* m_MainHUD;
 
 	bool m_OnSkill2;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class AEffectDecal* m_Decal;
 
 	bool m_SwordAttackEnable;
@@ -144,11 +153,12 @@ private:
 
 	int32 m_BuildUpgradeNum;
 
-	class ABuildable* m_CheckedBuild;
+	int32 CurrentBuildID;
 	const FUIItemTableInfo* m_BuildUpgradeInfo;
 
-
 	bool m_Start;
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -194,6 +204,10 @@ public:
 	void fourKey();
 	void fiveKey();
 	void sixKey();
+	
+	void Save();
+	void Load();
+
 public:
 	UFUNCTION(BlueprintCallable)
 	void Sprint(bool _Sprinting);
@@ -205,12 +219,12 @@ public:
 
 	void WeapomSetSocket(const FString& Path);
 
-	AWeapon* GetWeapon() { return m_Weapon; }
-	void SetWeapon(AWeapon* _Weapon);
+	ASpawnWeapon* GetWeapon() { return m_Weapon; }
+	void SetWeapon(ASpawnWeapon* _Weapon);
 	
 	void SetCrosshair();
 
-	void SetInvenItem(AUseItem* _Item, int32 _Num);
+	void SetInvenItem(UUseItem* _Item, int32 _Num);
 
 	//void GetInvenItem(int32 _Num);
 	FTransform ArrowTransform();
@@ -265,4 +279,39 @@ public:
 		void Upgrade();
 
 	void PlayerStart() { m_Start = true; }
+
+	void ClearUpgradeState();
+
+
+	void CheckUpdateOverlaps();
+	private:
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Category = "GIF Camera")
+			bool bGifTopView = false;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Category = "GIF Camera")
+			float GifTopViewArmLength = 15000.f;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Category = "GIF Camera")
+			float GifTopViewFOV = 70.f;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Category = "GIF Camera")
+			float GifTopViewPitch = -90.f;
+
+		float SavedArmLength = 900.f;
+		float SavedCameraFOV = 90.f;
+
+		FRotator SavedArmRelativeRotation;
+		FRotator SavedCameraRelativeRotation;
+
+		FVector SavedArmSocketOffset;
+		FVector SavedArmTargetOffset;
+
+		bool bSavedArmUsePawnControlRotation = false;
+		bool bSavedArmAbsoluteRotation = false;
+
+	void SetGifTopView(bool bEnable);
+	void ToggleGifTopView();
+
+	void draw();
+
 };

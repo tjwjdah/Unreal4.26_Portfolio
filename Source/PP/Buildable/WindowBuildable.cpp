@@ -6,6 +6,8 @@
 #include "WallBuildable.h"
 #include "FoundationBuildable.h"
 #include "CeilingBuildable.h"
+#include "../Chunk/ChunkManager.h"
+#include "../PPGameStateBase.h"
 AWindowBuildable::AWindowBuildable() {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -35,6 +37,14 @@ AWindowBuildable::AWindowBuildable() {
 	{
 		SceneComponents[i]->SetupAttachment(BuildComponents);
 	}
+
+	/*
+	CheckAddSocketType.Add(EBuildType::Wall);
+	CheckAddSocketType.Add(EBuildType::DoorFrame);
+	CheckAddSocketType.Add(EBuildType::WindowFrame);
+	CheckAddSocketType.Add(EBuildType::Ceiling);
+	CheckAddSocketType.Add(EBuildType::Foundation);
+	*/
 }
 
 void AWindowBuildable::BeginPlay()
@@ -50,53 +60,9 @@ void AWindowBuildable::Tick(float DeltaTime)
 void AWindowBuildable::Build()
 {
 	Super::Build();
-	TArray<FHitResult>	resultArray;
-
-	FCollisionQueryParams	params(NAME_None, false, this);
-	params.bReturnPhysicalMaterial = true;
-	bool Hit = GetWorld()->SweepMultiByChannel(resultArray,
-		GetActorLocation(), GetActorLocation(), GetActorRotation().Quaternion(), ECollisionChannel::ECC_GameTraceChannel1,
-		FCollisionShape::MakeBox(ActorSize +20.f),
-		params);
-	if (Hit)
-	{
-
-		for (auto& result : resultArray) {
-			if (result.Actor->IsA(AFoundationBuildable::StaticClass()))
-			{
-				AFoundationBuildable* Act = Cast<AFoundationBuildable>(result.Actor);
-				AddPillar(Act);
-				Act->AddCeilings(this);
-			}
-			else if (result.Actor->IsA(ACeilingBuildable::StaticClass()))
-			{
-				ACeilingBuildable* Act = Cast<ACeilingBuildable>(result.Actor);
-				AddPillar(Act);
-				Act->AddCeilings(this);
-			}
-			else if (result.Actor->IsA(AWallBuildable::StaticClass()))
-			{
-				AWallBuildable* Act = Cast<AWallBuildable>(result.Actor);
-				AddPillar(Act);
-				Act->AddCeilings(this);
-			}
-			else if (result.Actor->IsA(AWindowBuildable::StaticClass()))
-			{
-				AWindowBuildable* Act = Cast<AWindowBuildable>(result.Actor);
-				AddPillar(Act);
-				Act->AddCeilings(this);
-			}
-			else if (result.Actor->IsA(ADoorBuildable::StaticClass()))
-			{
-				ADoorBuildable* Act = Cast<ADoorBuildable>(result.Actor);
-				AddPillar(Act);
-				Act->AddCeilings(this);
-			}
-		}
-	}
 
 }
-
+/*
 void AWindowBuildable::BuildChecking(FVector Location)
 {
 	ResultLocation = Location;
@@ -211,3 +177,4 @@ void AWindowBuildable::BuildChecking(FVector Location)
 	Super::BuildChecking(ResultLocation);
 }
 
+*/

@@ -29,7 +29,7 @@ void UUIStart::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
-	//PrintViewport(1.f, FColor::Red, FString::Printf(TEXT("%d"), m_Test));
+	//
 
 	if (m_CameraMove)
 	{
@@ -39,38 +39,33 @@ void UUIStart::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			m_CameraMoveTime = 0.f;
 			m_CameraMove = false;
 			TArray<AActor*> Actors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), Actors);
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerCharacter::StaticClass(), Actors);
+			//PrintViewport(1.f, FColor::Red, FString::Printf(TEXT("%d"), Actors.Num()));
 			for (int32 i = 0; i < Actors.Num(); i++)
 			{
-				FString d = Actors[i]->GetName();
 
-				if (Actors[i]->GetName() == TEXT("BPPlayerCharacter_C_0"))
-				{
 				
-					APPGameModeBase* GameMode = Cast<APPGameModeBase>(GetWorld()->GetAuthGameMode());
-					GetWorld()->GetFirstPlayerController()->GetPawn()->Destroy();
-					//GameMode->DefaultPawnClass = Cast<APawn>(Actors[i])->GetClass();
-					GetWorld()->GetFirstPlayerController()->Possess(Cast<APawn>(Actors[i]));
-					Cast<APlayerCharacter>(Cast<APawn>(Actors[i]))->PlayerStart();
-					APlayerController* Controller = GetWorld()->GetFirstPlayerController();
+				
+				APPGameModeBase* GameMode = Cast<APPGameModeBase>(GetWorld()->GetAuthGameMode());
+				APawn* Pawn =  GetWorld()->GetFirstPlayerController()->GetPawn();
+				//GameMode->DefaultPawnClass = Cast<APawn>(Actors[i])->GetClass();
+				GetWorld()->GetFirstPlayerController()->Possess(Cast<APawn>(Actors[i]));
+				Pawn->Destroy();
+				Cast<APlayerCharacter>(Cast<APawn>(Actors[i]))->PlayerStart();
+				APlayerController* Controller = GetWorld()->GetFirstPlayerController();
 
-					SetVisibility(ESlateVisibility::Collapsed);
-					
-					GameMode->GetMainHUD()->GetUseInventory()->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-					GameMode->GetMainHUD()->GetCharacterState()->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-					GameMode->GetMainHUD()->GetGarmentInventory()->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-					FInputModeGameAndUI	Mode;
+				SetVisibility(ESlateVisibility::Collapsed);
+				
+				GameMode->GetMainHUD()->GetUseInventory()->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+				GameMode->GetMainHUD()->GetCharacterState()->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+				GameMode->GetMainHUD()->GetGarmentInventory()->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+				FInputModeGameAndUI	Mode;
 
-					Controller->SetInputMode(FInputModeGameOnly());
-					Controller->bShowMouseCursor = false;
-					SetPlayer();
+				Controller->SetInputMode(FInputModeGameOnly());
+				Controller->bShowMouseCursor = false;
+				SetPlayer();
 
-					m_Test = 1;
-					break;
-
-				}
-
-
+				break;
 			}
 		}
 	}

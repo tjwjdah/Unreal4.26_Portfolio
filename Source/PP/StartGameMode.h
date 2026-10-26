@@ -21,7 +21,7 @@ public:
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<UUIStart>	m_StartHUDClass;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UUIStart* m_StartHUD;
 
 public:

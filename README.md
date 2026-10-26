@@ -159,7 +159,7 @@ LineTrace나 Sweep에서 얻은 **HISM Component와 인스턴스 번호로 ID를
 Actor 수를 줄인 대신 인스턴스 번호와 내구도, 소켓 연결, 저장 데이터를 직접 관리해야 했습니다. 관리할 부분은 늘었지만, **개별 Actor 방식보다 생성 시간이 줄고 프레임 성능도 좋아졌기 때문에** 이 비용을 감수하고 Chunk-HISM 구조를 선택했습니다.
 
 <details>
-<summary>관련 코드 보기</summary>
+<summary>관련 코드 위치</summary>
 
 ```text
 PP/Chunk/ChunkActor.h / .cpp
@@ -268,7 +268,7 @@ Clean은 변경 없이 이동한 경우이고, Dirty는 활성 청크마다 건�
 연결 청크를 추가로 로드하면 유지하는 오브젝트도 늘어나지만, 청크 경계에서도 건축물의 연결과 지지 판정이 이어지도록 이 방식을 선택했습니다.
 
 <details>
-<summary>관련 코드 보기</summary>
+<summary>관련 코드 위치</summary>
 
 ```text
 PP/Chunk/ChunkManager.cpp
@@ -319,7 +319,7 @@ PP/Chunk/ChunkManager.cpp
 변경된 청크가 1개 또는 5개일 때, 저장 데이터를 만드는 시간이 약 288ms에서 1\~3ms로 줄었습니다. 이에 따라 전체 저장 시간도 약 329ms에서 94\~96ms로 줄어, 일부 지역만 바뀌는 상황에서 저장 속도를 개선할 수 있었습니다.
 
 <details>
-<summary>관련 코드 보기</summary>
+<summary>관련 코드 위치</summary>
 
 ```text
 PP/Chunk/ChunkSaveGame.h
@@ -380,7 +380,7 @@ PP/Chunk/ChunkManager.cpp
 | <img width="426" height="240" alt="기반" src="https://github.com/user-attachments/assets/af1538dd-7a3a-4296-8dd2-c5754a8f5a10" /> |
 
 <details>
-<summary>관련 코드 보기</summary>
+<summary>관련 코드 위치</summary>
 
 ```text
 PP/Buildable/BuildManagerComponent.cpp
@@ -419,7 +419,7 @@ PP/Chunk/ChunkManager.cpp
 기존 건축물과 같은 방식으로 배치하고 동작하는 종류는 DataTable에 항목을 추가하고 Mesh와 클래스를 지정해 늘릴 수 있습니다. 다만 새로운 동작이나 배치 규칙이 필요하면 해당 코드도 추가해야 합니다.
 
 <details>
-<summary>관련 코드 보기</summary>
+<summary>관련 코드 위치</summary>
 
 ```text
 PP/GameInfo.h
@@ -447,7 +447,7 @@ PP/Buildable/BuildManagerComponent.cpp
 | <img width="426" height="240" alt="아이템창" src="https://github.com/user-attachments/assets/687c31ac-492b-47cd-bcc8-30136e0416c9" /> | <img width="426" height="240" alt="퀘스트" src="https://github.com/user-attachments/assets/e03f1a96-93ed-4878-8b33-00cbbf2a7b78" /> |
 
 <details>
-<summary>관련 코드 보기</summary>
+<summary>관련 코드 위치</summary>
 
 ```text
 PP/Widget/InventoryTile.cpp / UseInventoryTile.cpp
@@ -472,7 +472,7 @@ PP/GameInfo.h / PPGameInstance.cpp
 | <img width="426" height="240" alt="몬스터전투" src="https://github.com/user-attachments/assets/4c9936b2-7f39-4fd4-9565-437167384a42" /> |
 
 <details>
-<summary>관련 코드 보기</summary>
+<summary>관련 코드 위치</summary>
 
 ```text
 PP/AI/BTService_PlayerDetect.cpp

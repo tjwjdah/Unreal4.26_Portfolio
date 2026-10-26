@@ -162,12 +162,20 @@ Actor 수를 줄인 대신 인스턴스 번호와 내구도, 소켓 연결, 저�
 <summary>관련 코드 위치</summary>
 
 ```text
-PP/Chunk/ChunkActor.h / .cpp
-  AddInstance / RemoveInstance / GetMeshID
-PP/Chunk/ChunkManager.h / .cpp
-  UpgradeBuilding / RemoveOnlyBuilding / DestroyResource
-PP/Tools/AInstancingBenchmark.h / .cpp
-  RunBenchmark
+PP/Chunk/ChunkActor.h
+PP/Chunk/ChunkActor.cpp
+PP/Chunk/ChunkManager.h
+PP/Chunk/ChunkManager.cpp
+PP/Tools/AInstancingBenchmark.h
+PP/Tools/AInstancingBenchmark.cpp
+
+AChunkActor::AddInstance
+AChunkActor::RemoveInstance
+AChunkActor::GetMeshID
+AChunkManager::UpgradeBuilding
+AChunkManager::RemoveOnlyBuilding
+AChunkManager::DestroyResource
+AInstancingBenchmark::RunBenchmark
 ```
 
 </details>
@@ -271,11 +279,16 @@ Clean은 변경 없이 이동한 경우이고, Dirty는 활성 청크마다 건�
 <summary>관련 코드 위치</summary>
 
 ```text
+PP/Chunk/ChunkManager.h
 PP/Chunk/ChunkManager.cpp
-  UpdateChunkStreamingAroundLocation
-  BuildWantChunkSet / BuildConnectedWantedChunkSet
-  LoadChunkRuntime / UnloadChunkRuntime
-  RebuildChunkDataIndex / AppendChunkStreamingCSV
+
+AChunkManager::UpdateChunkStreamingAroundLocation
+AChunkManager::BuildWantChunkSet
+AChunkManager::BuildConnectedWantedChunkSet
+AChunkManager::LoadChunkRuntime
+AChunkManager::UnloadChunkRuntime
+AChunkManager::RebuildChunkDataIndex
+AChunkManager::AppendChunkStreamingCSV
 ```
 
 </details>
@@ -323,10 +336,18 @@ PP/Chunk/ChunkManager.cpp
 
 ```text
 PP/Chunk/ChunkSaveGame.h
+PP/Chunk/ChunkManager.h
 PP/Chunk/ChunkManager.cpp
-  SaveWorld / SaveWorldFull / SaveWorldDirty / LoadWorld
-  BuildChunkSaveData / SaveLoadChunkCache / FlushDirtyChunksSaveCache
-  LoadChunkRuntime / SpawnAttachBuildableSaveData
+
+AChunkManager::SaveWorld
+AChunkManager::SaveWorldFull
+AChunkManager::SaveWorldDirty
+AChunkManager::LoadWorld
+AChunkManager::BuildChunkSaveData
+AChunkManager::SaveLoadChunkCache
+AChunkManager::FlushDirtyChunksSaveCache
+AChunkManager::LoadChunkRuntime
+AChunkManager::SpawnAttachBuildableSaveData
 ```
 
 </details>
@@ -383,15 +404,28 @@ PP/Chunk/ChunkManager.cpp
 <summary>관련 코드 위치</summary>
 
 ```text
+PP/Buildable/BuildManagerComponent.h
 PP/Buildable/BuildManagerComponent.cpp
-  FindClosestSocket / Building
+PP/Buildable/Buildable.h
 PP/Buildable/Buildable.cpp
-  Build / BuildDestroy / TakeDamage
+PP/Buildable/OpenDoorBuildable.h
 PP/Buildable/OpenDoorBuildable.cpp
-  Build / PlayerOpenDoor
+PP/Chunk/ChunkManager.h
 PP/Chunk/ChunkManager.cpp
-  AddSocket / AddHISMAttachBuildActor / RemoveHISMAttachBuildActor
-  DestroyBuilding / DisconnectBuilding / RemoveOnlyBuilding
+
+UBuildManagerComponent::FindClosestSocket
+UBuildManagerComponent::Building
+ABuildable::Build
+ABuildable::BuildDestroy
+ABuildable::TakeDamage
+AOpenDoorBuildable::Build
+AOpenDoorBuildable::PlayerOpenDoor
+AChunkManager::AddSocket
+AChunkManager::AddHISMAttachBuildActor
+AChunkManager::RemoveHISMAttachBuildActor
+AChunkManager::DestroyBuilding
+AChunkManager::DisconnectBuilding
+AChunkManager::RemoveOnlyBuilding
 ```
 
 </details>
@@ -423,11 +457,18 @@ PP/Chunk/ChunkManager.cpp
 
 ```text
 PP/GameInfo.h
-  FBuildDefinitionInfo
-PP/AssetManager/BuildAssetSubsystem.h / .cpp
-  RequestAsync / ResolveSync / ResolveLoad
+PP/AssetManager/BuildAssetSubsystem.h
+PP/AssetManager/BuildAssetSubsystem.cpp
+PP/Buildable/BuildManagerComponent.h
 PP/Buildable/BuildManagerComponent.cpp
-  SetBuildData / Building
+
+FBuildDefinitionInfo
+
+UBuildAssetSubsystem::RequestAsync
+UBuildAssetSubsystem::ResolveSync
+UBuildAssetSubsystem::ResolveLoad
+UBuildManagerComponent::SetBuildData
+UBuildManagerComponent::Building
 ```
 
 </details>
@@ -450,9 +491,19 @@ PP/Buildable/BuildManagerComponent.cpp
 <summary>관련 코드 위치</summary>
 
 ```text
-PP/Widget/InventoryTile.cpp / UseInventoryTile.cpp
-PP/Widget/Crafting.cpp / SelectedBlueprintInfo.cpp / QuestWidget.cpp
-PP/GameInfo.h / PPGameInstance.cpp
+PP/Widget/InventoryTile.h
+PP/Widget/InventoryTile.cpp
+PP/Widget/UseInventoryTile.h
+PP/Widget/UseInventoryTile.cpp
+PP/Widget/Crafting.h
+PP/Widget/Crafting.cpp
+PP/Widget/SelectedBlueprintInfo.h
+PP/Widget/SelectedBlueprintInfo.cpp
+PP/Widget/QuestWidget.h
+PP/Widget/QuestWidget.cpp
+PP/GameInfo.h
+PP/PPGameInstance.h
+PP/PPGameInstance.cpp
 ```
 
 </details>
@@ -475,13 +526,30 @@ PP/GameInfo.h / PPGameInstance.cpp
 <summary>관련 코드 위치</summary>
 
 ```text
+PP/AI/BTService_PlayerDetect.h
 PP/AI/BTService_PlayerDetect.cpp
-PP/AI/BTDecorator_CheckDistance.cpp / BTDecorator_CheckPhase.cpp
-PP/AI/BTTask_Patrol.cpp / BTTask_TargetTrace.cpp
-PP/AI/BTTask_NormalAttack.cpp / BTTask_Getaway.cpp
+PP/AI/BTDecorator_CheckDistance.h
+PP/AI/BTDecorator_CheckDistance.cpp
+PP/AI/BTDecorator_CheckPhase.h
+PP/AI/BTDecorator_CheckPhase.cpp
+PP/AI/BTTask_Patrol.h
+PP/AI/BTTask_Patrol.cpp
+PP/AI/BTTask_TargetTrace.h
+PP/AI/BTTask_TargetTrace.cpp
+PP/AI/BTTask_NormalAttack.h
+PP/AI/BTTask_NormalAttack.cpp
+PP/AI/BTTask_Getaway.h
+PP/AI/BTTask_Getaway.cpp
+PP/AI/BTTask_MorigeshPhase0.h
 PP/AI/BTTask_MorigeshPhase0.cpp
-PP/AI/UBTTask_MorigeshPhase1.cpp / UBTTask_MorigeshPhase2.cpp
-PP/Character/Monster/Morigesh.cpp / MorigeshAnim.cpp
+PP/AI/UBTTask_MorigeshPhase1.h
+PP/AI/UBTTask_MorigeshPhase1.cpp
+PP/AI/UBTTask_MorigeshPhase2.h
+PP/AI/UBTTask_MorigeshPhase2.cpp
+PP/Character/Monster/Morigesh.h
+PP/Character/Monster/Morigesh.cpp
+PP/Character/Monster/MorigeshAnim.h
+PP/Character/Monster/MorigeshAnim.cpp
 ```
 
 </details>

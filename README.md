@@ -192,6 +192,7 @@ Actor 수를 줄인 대신 인스턴스 번호와 내구도, 소켓 연결, 저�
 - [`AAInstancingBenchmark::RunBenchmark`](https://github.com/tjwjdah/Unreal4.26_Portfolio/blob/80d7a6846332af92c5e4ac2d05f31cd4c2ae3de7/Source/PP/Tools/AInstancingBenchmark.cpp#L102-L183)
 
 </details>
+
 ---
 
 <a id="chunk-systems"></a>
@@ -677,18 +678,18 @@ Clean은 변경 없이 이동한 경우이고, Dirty는 활성 청크마다 건�
 
 | 경로 | 주요 역할 |
 |---|---|
-| `PP/AI` | Behavior Tree Task·Service·Decorator |
-| `PP/AssetManager` | 건축 에셋 로드와 에셋 캐시 |
-| `PP/Buildable` | 건축 프리뷰·배치·건축물 Actor·문 상호작용 |
-| `PP/Character/Player` | 플레이어 이동·전투·건축·인벤토리 연동 |
-| `PP/Character/Monster` | 몬스터·보스·AI Controller·애니메이션 |
-| `PP/Chunk` | 청크·HISM·상태 관리·저장/로드·스트리밍 |
-| `PP/Customizer` | 캐릭터 커스터마이징 |
-| `PP/Equipment` | 무기·장비·소비 아이템·화살 |
-| `PP/Environments` | 나무·돌 등 채집 자원 |
-| `PP/Effect` | 투사체·보스 스킬·보호막·이펙트 |
-| `PP/Tools` | 성능 측정·포털·아이템 박스 |
-| `PP/Widget` | 인벤토리·제작·퀘스트·HUD |
+| `Source/PP/AI` | Behavior Tree Task·Service·Decorator |
+| `Source/PP/AssetManager` | 건축 에셋 로드와 에셋 캐시 |
+| `Source/PP/Buildable` | 건축 프리뷰·배치·건축물 Actor·문 상호작용 |
+| `Source/PP/Character/Player` | 플레이어 이동·전투·건축·인벤토리 연동 |
+| `Source/PP/Character/Monster` | 몬스터·보스·AI Controller·애니메이션 |
+| `Source/PP/Chunk` | 청크·HISM·상태 관리·저장/로드·스트리밍 |
+| `Source/PP/Customizer` | 캐릭터 커스터마이징 |
+| `Source/PP/Equipment` | 무기·장비·소비 아이템·화살 |
+| `Source/PP/Environments` | 나무·돌 등 채집 자원 |
+| `Source/PP/Effect` | 투사체·보스 스킬·보호막·이펙트 |
+| `Source/PP/Tools` | 성능 측정·포털·아이템 박스 |
+| `Source/PP/Widget` | 인벤토리·제작·퀘스트·HUD |
 
 ---
 
